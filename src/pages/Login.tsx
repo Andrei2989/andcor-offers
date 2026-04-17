@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, session } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (session) navigate('/', { replace: true });
+  }, [session, navigate]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +21,7 @@ export default function Login() {
     try {
       const { error } = await signIn(email, password);
       if (error) setError(error.message);
+      else navigate('/', { replace: true });
     } catch (err) {
       setError((err as Error).message ?? 'Eroare necunoscută');
       console.error('Login error:', err);
