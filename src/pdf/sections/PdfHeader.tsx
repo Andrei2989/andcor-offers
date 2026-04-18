@@ -2,13 +2,15 @@ import { View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import { C } from '../theme';
 import type { PdfCompany } from '../types';
 
+const LOGO_W = 210;
+
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  logoCol: { flexDirection: 'column', gap: 6 },
-  logoAndcor: { height: 50, width: 175, objectFit: 'contain' },
-  subLogos: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoIveco: { height: 16, width: 50, objectFit: 'contain' },
-  logoIso: { height: 32, width: 32, objectFit: 'contain' },
+  logoCol: { flexDirection: 'column', gap: 8, width: LOGO_W },
+  logoAndcor: { width: LOGO_W, height: 60, objectFit: 'contain', objectPositionX: 'left' },
+  subLogos: { flexDirection: 'row', alignItems: 'center', gap: 12, width: LOGO_W },
+  logoIveco: { height: 24, flex: 1, objectFit: 'contain', objectPositionX: 'left' },
+  logoIso: { height: 46, width: 46, objectFit: 'contain' },
   info: { alignItems: 'flex-end' },
   name: { fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 2 },
   line: { fontSize: 8, color: C.g700, lineHeight: 1.35 },
