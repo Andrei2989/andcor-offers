@@ -13,6 +13,9 @@ export const SEED_OFFER: PdfOffer = {
   warranty_months: 12,
   transport: 'Gratuit',
   payment_method: 'Ordin de plată',
+  client_name: '',
+  client_cif: '',
+  client_address: '',
   company: {
     company_name: 'ANDCOR AUTO SRL',
     cif: 'RO42820863',
