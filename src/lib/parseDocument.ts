@@ -26,7 +26,7 @@ async function callClaude(
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       system:
-        'You are a procurement document parser. Extract all line items and return ONLY a valid JSON array. Each element must have:\n- "name": product description WITHOUT any part codes or references (e.g. "ALTERNATOR DACIA DUSTER 1.3")\n- "manufacturer_ref": part/reference code if present in the description (e.g. "253206170R", "cod orientativ 253206170R" → extract just the code; empty string if none)\n- "unit": unit of measure (BUC, SET, KIT, L, KG — use value from document or "buc" if missing)\n- "quantity": numeric value\nIgnore headers, totals, footnotes. Do not wrap in markdown. Output only the JSON array.',
+        'You are a procurement document parser. Extract all line items and return ONLY a valid JSON array. Each element must have:\n- "name": the FULL original product description, unchanged, including all details\n- "manufacturer_ref": if the description contains a part code, OEM code, or vehicle identification number (VIN/chassis like "VF1HJD40166029576"), extract just that code here; also extract codes like "253206170R" or similar alphanumeric references; empty string if none found\n- "unit": unit of measure (BUC, SET, KIT, L, KG — use value from document or "buc" if missing)\n- "quantity": numeric value\nIgnore headers, totals, footnotes. Do not wrap in markdown. Output only the JSON array.',
       messages: [
         {
           role: 'user',
