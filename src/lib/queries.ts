@@ -19,6 +19,7 @@ export const keys = {
 export interface OfferListFilters {
   status?: OfferStatus[];
   clientSearch?: string;
+  clientExact?: string;
   from?: string;
   to?: string;
 }
@@ -46,7 +47,8 @@ export async function upsertCompany(patch: Partial<CompanySettings>): Promise<Co
 export async function fetchOffers(filters: OfferListFilters = {}): Promise<OfferWithTotal[]> {
   let q = supabase.from('offers_with_total').select('*').order('issue_date', { ascending: false });
   if (filters.status?.length) q = q.in('status', filters.status);
-  if (filters.clientSearch?.trim())
+  if (filters.clientExact) q = q.eq('client_name', filters.clientExact);
+  else if (filters.clientSearch?.trim())
     q = q.ilike('client_name', `%${filters.clientSearch.trim()}%`);
   if (filters.from) q = q.gte('issue_date', filters.from);
   if (filters.to) q = q.lte('issue_date', filters.to);

@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout';
 import OffersList from '@/pages/OffersList';
 import OfferEditor from '@/pages/OfferEditor';
 import Settings from '@/pages/Settings';
+import CustomerPage from '@/pages/CustomerPage';
 import Login from '@/pages/Login';
 import DevPdf from '@/pages/DevPdf';
 
@@ -47,6 +48,7 @@ function ProtectedShell() {
       <Routes>
         <Route index element={<OffersList />} />
         <Route path="offers/:id/edit" element={<OfferEditor />} />
+        <Route path="customers/:clientName" element={<CustomerPage />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

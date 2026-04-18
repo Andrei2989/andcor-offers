@@ -174,7 +174,13 @@ export default function OffersList() {
                   </button>
                 </td>
                 <td className="px-4 py-2">{formatDateRO(o.issue_date)}</td>
-                <td className="px-4 py-2">{o.client_name ?? <span className="text-ink-500">—</span>}</td>
+                <td className="px-4 py-2">
+                  {o.client_name
+                    ? <button className="hover:underline text-left" onClick={() => navigate(`/customers/${encodeURIComponent(o.client_name!)}`)}>
+                        {o.client_name}
+                      </button>
+                    : <span className="text-ink-500">—</span>}
+                </td>
                 <td className="px-4 py-2 text-right font-medium">{formatRON(Number(o.total))}</td>
                 <td className="px-4 py-2"><StatusBadge status={o.status} /></td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
