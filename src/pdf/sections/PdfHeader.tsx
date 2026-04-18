@@ -5,7 +5,7 @@ import type { PdfCompany } from '../types';
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   logos: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoAndcor: { height: 48, width: 44, objectFit: 'contain' },
+  logoAndcor: { height: 40, width: 140, objectFit: 'contain' },
   logoIveco: { height: 18, width: 54, objectFit: 'contain' },
   logoIso: { height: 48, width: 40, objectFit: 'contain' },
   info: { alignItems: 'flex-end' },
