@@ -55,11 +55,14 @@ export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
         />
       </td>
       <td className={baseCell}>
-        <input
-          className={inputCls}
+        <textarea
+          className={`${inputCls} resize-none leading-snug`}
+          style={{ overflow: 'hidden', fieldSizing: 'content', minHeight: '1.75rem' } as React.CSSProperties}
           value={item.manufacturer_ref}
           placeholder="Reper fabricație"
-          onChange={(e) => onPatch({ manufacturer_ref: e.target.value })}
+          rows={1}
+          ref={(el) => { if (el) autoResize(el); }}
+          onChange={(e) => { autoResize(e.target); onPatch({ manufacturer_ref: e.target.value }); }}
         />
       </td>
       <td className={baseCell}>
