@@ -12,6 +12,11 @@ interface Props {
   onEnter: () => void;
 }
 
+function autoResize(el: HTMLTextAreaElement) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -39,11 +44,14 @@ export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
         {index + 1}
       </td>
       <td className={baseCell}>
-        <input
-          className={inputCls}
+        <textarea
+          className={`${inputCls} resize-none leading-snug`}
+          style={{ overflow: 'hidden', fieldSizing: 'content', minHeight: '1.75rem' } as React.CSSProperties}
           value={item.name}
           placeholder="Denumire produs"
-          onChange={(e) => onPatch({ name: e.target.value })}
+          rows={1}
+          ref={(el) => { if (el) autoResize(el); }}
+          onChange={(e) => { autoResize(e.target); onPatch({ name: e.target.value }); }}
         />
       </td>
       <td className={baseCell}>
