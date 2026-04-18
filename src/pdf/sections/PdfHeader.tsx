@@ -4,11 +4,21 @@ import type { PdfCompany } from '../types';
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  logoCol: { flexDirection: 'column', gap: 6 },
+  logoCol: { flexDirection: 'column', gap: 8 },
   logoAndcor: { height: 70, width: 220, objectFit: 'contain' },
-  subLogos: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIveco: { height: 16, width: 60, objectFit: 'contain' },
-  logoIso: { height: 30, width: 30, objectFit: 'contain' },
+  subLogos: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: 220,
+    paddingTop: 4,
+    paddingBottom: 2,
+    borderTopWidth: 0.5,
+    borderTopColor: '#cbd5e1',
+  },
+  logoIveco: { height: 20, width: 100, objectFit: 'contain' },
+  divider: { width: 0.5, height: 28, backgroundColor: '#cbd5e1' },
+  logoIso: { height: 42, width: 42, objectFit: 'contain' },
   info: { alignItems: 'flex-end' },
   name: { fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 2 },
   line: { fontSize: 8, color: C.g700, lineHeight: 1.35 },
@@ -16,6 +26,7 @@ const s = StyleSheet.create({
 });
 
 export function PdfHeader({ company }: { company: PdfCompany }) {
+  const showSub = company.iveco_logo_url || company.iso_logo_url;
   return (
     <View>
       <View style={s.row}>
@@ -23,14 +34,19 @@ export function PdfHeader({ company }: { company: PdfCompany }) {
           {company.logo_url
             ? <Image src={company.logo_url} style={s.logoAndcor} />
             : null}
-          <View style={s.subLogos}>
-            {company.iveco_logo_url
-              ? <Image src={company.iveco_logo_url} style={s.logoIveco} />
-              : null}
-            {company.iso_logo_url
-              ? <Image src={company.iso_logo_url} style={s.logoIso} />
-              : null}
-          </View>
+          {showSub && (
+            <View style={s.subLogos}>
+              {company.iveco_logo_url
+                ? <Image src={company.iveco_logo_url} style={s.logoIveco} />
+                : null}
+              {company.iveco_logo_url && company.iso_logo_url
+                ? <View style={s.divider} />
+                : null}
+              {company.iso_logo_url
+                ? <Image src={company.iso_logo_url} style={s.logoIso} />
+                : null}
+            </View>
+          )}
         </View>
         <View style={s.info}>
           <Text style={s.name}>{company.company_name}</Text>
