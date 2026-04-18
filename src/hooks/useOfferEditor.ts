@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import type { ParsedItem } from '@/lib/parseDocument';
 import { useQueryClient } from '@tanstack/react-query';
 import type { OfferEditorState, OfferGroup, OfferItem, OfferStatus } from '@/types/db';
 import { saveOfferRpc } from '@/lib/queries';
@@ -14,7 +15,8 @@ type Action =
   | { type: 'ADD_ITEM'; gid: string }
   | { type: 'DEL_ITEM'; gid: string; iid: string }
   | { type: 'PATCH_ITEM'; gid: string; iid: string; patch: Partial<OfferItem> }
-  | { type: 'REORDER_ITEMS'; gid: string; ids: string[] };
+  | { type: 'REORDER_ITEMS'; gid: string; ids: string[] }
+  | { type: 'IMPORT_ITEMS'; gid: string; items: ParsedItem[] };
 
 function reducer(state: OfferEditorState, action: Action): OfferEditorState {
   switch (action.type) {
@@ -87,6 +89,23 @@ function reducer(state: OfferEditorState, action: Action): OfferEditorState {
         const byId = new Map(g.items.map((i) => [i.id, i]));
         return { ...g, items: action.ids.map((id, i) => ({ ...byId.get(id)!, sort_order: i })) };
       });
+    case 'IMPORT_ITEMS':
+      return withGroup(state, action.gid, (g) => ({
+        ...g,
+        items: [
+          ...g.items,
+          ...action.items.map((item, i) => ({
+            id: tempId(),
+            sort_order: g.items.length + i,
+            name: item.name,
+            manufacturer_ref: '',
+            part_code: '',
+            unit: item.unit,
+            quantity: item.quantity,
+            unit_price: 0,
+          })),
+        ],
+      }));
   }
 }
 

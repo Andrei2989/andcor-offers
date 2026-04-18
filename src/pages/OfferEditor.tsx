@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { ImportDocumentModal } from '@/components/editor/ImportDocumentModal';
+import type { ParsedItem } from '@/lib/parseDocument';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -34,6 +36,11 @@ export default function OfferEditor() {
   const { state, dispatch, saveStatus, lastSavedAt, lastError, saveNow } = useOfferEditor(initial ?? null);
 
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+
+  function handleImport(gid: string, items: ParsedItem[]) {
+    dispatch({ type: 'IMPORT_ITEMS', gid, items });
+  }
 
   // Build PDF viewmodel from current form state, debounced for performance.
   const debouncedState = useDebouncedValue(state, 300);
@@ -55,6 +62,9 @@ export default function OfferEditor() {
           </div>
           <div className="flex items-center gap-3">
             <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} error={lastError} onRetry={saveNow} />
+            <button className="btn-secondary !text-xs !py-1.5" onClick={() => setShowImport(true)}>
+              Import document
+            </button>
             <button className="btn-secondary !text-xs !py-1.5" onClick={() => navigate('/')}>
               Înapoi la listă
             </button>
@@ -85,6 +95,14 @@ export default function OfferEditor() {
       <div className={`lg:sticky lg:top-4 lg:self-start lg:h-[calc(100vh-6rem)] ${showPreviewMobile ? 'h-[80vh]' : 'hidden lg:block h-[85vh]'}`}>
         {pdfOffer && <PdfPreviewPane offer={pdfOffer} />}
       </div>
+
+      {showImport && (
+        <ImportDocumentModal
+          groups={state.groups}
+          onImport={handleImport}
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
   );
 }
