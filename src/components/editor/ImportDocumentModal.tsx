@@ -4,7 +4,7 @@ import { parseDocument, type ParsedItem } from '@/lib/parseDocument';
 
 interface Props {
   groups: OfferGroup[];
-  onImport: (gid: string, items: ParsedItem[]) => void;
+  onImport: (assignments: { gid: string; items: ParsedItem[] }[]) => void;
   onClose: () => void;
 }
 
@@ -15,7 +15,7 @@ const ACCEPTED = '.docx,.xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp';
 export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
   const [step, setStep] = useState<Step>('upload');
   const [items, setItems] = useState<ParsedItem[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState(groups[0]?.id ?? '');
+  const [itemGroups, setItemGroups] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -34,6 +34,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
       const result = await parseDocument(file, apiKey);
       if (!result.length) throw new Error('Nu au fost găsite articole în document.');
       setItems(result);
+      setItemGroups(result.map(() => groups[0]?.id ?? ''));
       setStep('preview');
     } catch (e) {
       setError((e as Error).message);
@@ -55,17 +56,29 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
 
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
+    setItemGroups((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function setGroupForItem(idx: number, gid: string) {
+    setItemGroups((prev) => prev.map((g, i) => (i === idx ? gid : g)));
   }
 
   function confirm() {
-    if (!selectedGroup || !items.length) return;
-    onImport(selectedGroup, items);
+    if (!items.length) return;
+    const map = new Map<string, ParsedItem[]>();
+    items.forEach((item, idx) => {
+      const gid = itemGroups[idx] ?? groups[0]?.id ?? '';
+      if (!map.has(gid)) map.set(gid, []);
+      map.get(gid)!.push(item);
+    });
+    const assignments = Array.from(map.entries()).map(([gid, its]) => ({ gid, items: its }));
+    onImport(assignments);
     onClose();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-ink-200">
           <h2 className="font-semibold text-navy text-lg">Import din document</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-700 text-xl leading-none">&times;</button>
@@ -112,7 +125,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
               <p className="text-sm text-ink-500 mb-3">
                 {items.length} articole găsite. Poți elimina rânduri înainte de import.
               </p>
-              <div className="overflow-x-auto rounded border border-ink-200 mb-4">
+              <div className="overflow-x-auto rounded border border-ink-200">
                 <table className="w-full text-sm">
                   <thead className="bg-ink-50 text-ink-500 uppercase text-xs tracking-wide">
                     <tr>
@@ -120,6 +133,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                       <th className="text-left px-3 py-2 w-32">Reper fabricație</th>
                       <th className="px-3 py-2 text-center w-16">U/M</th>
                       <th className="px-3 py-2 text-right w-20">Cant.</th>
+                      <th className="px-3 py-2 text-left w-36">Grupă</th>
                       <th className="w-8" />
                     </tr>
                   </thead>
@@ -130,6 +144,17 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                         <td className="px-3 py-2 text-ink-500 text-sm">{item.manufacturer_ref || '—'}</td>
                         <td className="px-3 py-2 text-center text-ink-600">{item.unit}</td>
                         <td className="px-3 py-2 text-right text-ink-600">{item.quantity}</td>
+                        <td className="px-3 py-2">
+                          <select
+                            className="input !py-0.5 !text-xs w-full"
+                            value={itemGroups[idx] ?? groups[0]?.id}
+                            onChange={(e) => setGroupForItem(idx, e.target.value)}
+                          >
+                            {groups.map((g) => (
+                              <option key={g.id} value={g.id}>{g.title}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td className="px-2 py-2 text-center">
                           <button
                             onClick={() => removeItem(idx)}
@@ -144,19 +169,6 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                   </tbody>
                 </table>
               </div>
-
-              <div className="flex items-center gap-3">
-                <label className="text-sm font-medium text-ink-700 whitespace-nowrap">Adaugă în grupa:</label>
-                <select
-                  className="input flex-1"
-                  value={selectedGroup}
-                  onChange={(e) => setSelectedGroup(e.target.value)}
-                >
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>{g.title}</option>
-                  ))}
-                </select>
-              </div>
             </div>
           )}
         </div>
@@ -166,7 +178,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
             <button className="btn-secondary" onClick={onClose}>Anulează</button>
             <button
               className="btn-primary"
-              disabled={!items.length || !selectedGroup}
+              disabled={!items.length}
               onClick={confirm}
             >
               Importă {items.length} articole

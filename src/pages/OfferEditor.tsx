@@ -38,8 +38,10 @@ export default function OfferEditor() {
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  function handleImport(gid: string, items: ParsedItem[]) {
-    dispatch({ type: 'IMPORT_ITEMS', gid, items });
+  function handleImport(assignments: { gid: string; items: ParsedItem[] }[]) {
+    assignments.forEach(({ gid, items }) => {
+      dispatch({ type: 'IMPORT_ITEMS', gid, items });
+    });
   }
 
   // Build PDF viewmodel from current form state, debounced for performance.
