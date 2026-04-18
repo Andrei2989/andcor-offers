@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 
 export interface ParsedItem {
   name: string;
+  manufacturer_ref: string;
   unit: string;
   quantity: number;
 }
@@ -25,13 +26,13 @@ async function callClaude(
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
       system:
-        'You are a procurement document parser. Extract all line items from the document and return ONLY a valid JSON array. Each element must have: "name" (full product description as a string), "unit" (unit of measure, e.g. BUC, SET, KIT, L, KG — use the value from the document or "buc" if missing), "quantity" (numeric value). Ignore headers, totals, and footnotes. Do not wrap in markdown. Output only the JSON array.',
+        'You are a procurement document parser. Extract all line items and return ONLY a valid JSON array. Each element must have:\n- "name": product description WITHOUT any part codes or references (e.g. "ALTERNATOR DACIA DUSTER 1.3")\n- "manufacturer_ref": part/reference code if present in the description (e.g. "253206170R", "cod orientativ 253206170R" → extract just the code; empty string if none)\n- "unit": unit of measure (BUC, SET, KIT, L, KG — use value from document or "buc" if missing)\n- "quantity": numeric value\nIgnore headers, totals, footnotes. Do not wrap in markdown. Output only the JSON array.',
       messages: [
         {
           role: 'user',
           content: [
             ...content,
-            { type: 'text', text: 'Extract all line items as a JSON array [{name, unit, quantity}].' },
+            { type: 'text', text: 'Extract all line items as a JSON array [{name, manufacturer_ref, unit, quantity}].' },
           ],
         },
       ],
@@ -48,11 +49,12 @@ async function callClaude(
   const match = text.match(/\[[\s\S]*\]/);
   if (!match) throw new Error('Claude returned no JSON array');
 
-  const items = JSON.parse(match[0]) as Array<{ name?: unknown; unit?: unknown; quantity?: unknown }>;
+  const items = JSON.parse(match[0]) as Array<{ name?: unknown; manufacturer_ref?: unknown; unit?: unknown; quantity?: unknown }>;
   return items
     .filter((i) => i.name && String(i.name).trim())
     .map((i) => ({
       name: String(i.name ?? '').trim(),
+      manufacturer_ref: String(i.manufacturer_ref ?? '').trim(),
       unit: String(i.unit ?? 'buc').trim() || 'buc',
       quantity: Number(i.quantity) || 1,
     }));

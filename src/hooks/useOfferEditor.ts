@@ -98,7 +98,7 @@ function reducer(state: OfferEditorState, action: Action): OfferEditorState {
             id: tempId(),
             sort_order: g.items.length + i,
             name: item.name,
-            manufacturer_ref: '',
+            manufacturer_ref: item.manufacturer_ref,
             part_code: '',
             unit: item.unit,
             quantity: item.quantity,

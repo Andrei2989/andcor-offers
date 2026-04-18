@@ -117,6 +117,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                   <thead className="bg-ink-50 text-ink-500 uppercase text-xs tracking-wide">
                     <tr>
                       <th className="text-left px-3 py-2">Denumire</th>
+                      <th className="text-left px-3 py-2 w-32">Reper fabricație</th>
                       <th className="px-3 py-2 text-center w-16">U/M</th>
                       <th className="px-3 py-2 text-right w-20">Cant.</th>
                       <th className="w-8" />
@@ -126,6 +127,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                     {items.map((item, idx) => (
                       <tr key={idx} className="border-t border-ink-100 hover:bg-ink-50">
                         <td className="px-3 py-2 text-ink-800">{item.name}</td>
+                        <td className="px-3 py-2 text-ink-500 text-sm">{item.manufacturer_ref || '—'}</td>
                         <td className="px-3 py-2 text-center text-ink-600">{item.unit}</td>
                         <td className="px-3 py-2 text-right text-ink-600">{item.quantity}</td>
                         <td className="px-2 py-2 text-center">
