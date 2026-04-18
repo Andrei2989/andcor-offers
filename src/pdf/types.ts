@@ -40,6 +40,9 @@ export interface PdfOffer {
   warranty_months: number;
   transport: string;
   payment_method: string;
+  client_name: string;
+  client_cif: string;
+  client_address: string;
   company: PdfCompany;
   groups: PdfOfferGroup[];
 }

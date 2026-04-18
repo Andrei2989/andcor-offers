@@ -10,7 +10,7 @@ const s = StyleSheet.create({
   name: { fontSize: 9, color: C.navy, fontWeight: 700, marginTop: 2 },
 });
 
-export function PdfSignatures({ company }: { company: PdfCompany }) {
+export function PdfSignatures({ company, clientName }: { company: PdfCompany; clientName?: string }) {
   return (
     <View style={s.wrap} wrap={false}>
       <View style={s.col}>
@@ -21,6 +21,7 @@ export function PdfSignatures({ company }: { company: PdfCompany }) {
       <View style={s.col}>
         <View style={s.rule} />
         <Text style={s.label}>Semnătură și ștampilă client</Text>
+        {!!clientName && <Text style={s.name}>{clientName}</Text>}
       </View>
     </View>
   );

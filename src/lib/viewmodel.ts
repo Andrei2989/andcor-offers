@@ -13,6 +13,9 @@ export function toPdfOffer(state: OfferEditorState, company: CompanySettings | n
     warranty_months: state.warranty_months,
     transport: state.transport,
     payment_method: state.payment_method,
+    client_name: state.client_name ?? '',
+    client_cif: state.client_cif ?? '',
+    client_address: state.client_address ?? '',
     company: {
       company_name: company?.company_name ?? 'ANDCOR AUTO SRL',
       cif: company?.cif ?? '',

@@ -6,6 +6,7 @@ import { PdfTitle } from './sections/PdfTitle';
 import { PdfMetaBox } from './sections/PdfMetaBox';
 import { PdfGroupTable } from './sections/PdfGroupTable';
 import { PdfTerms } from './sections/PdfTerms';
+import { PdfClientBox } from './sections/PdfClientBox';
 import { PdfSignatures } from './sections/PdfSignatures';
 import { PdfFooter } from './sections/PdfFooter';
 
@@ -29,11 +30,12 @@ export function OfferDocument({ offer }: { offer: PdfOffer }) {
           <PdfHeader company={offer.company} />
           <PdfTitle />
           <PdfMetaBox offer={offer} />
+          <PdfClientBox offer={offer} />
           {offer.groups.map((g, i) => (
             <PdfGroupTable key={i} group={g} />
           ))}
           <PdfTerms offer={offer} company={offer.company} />
-          <PdfSignatures company={offer.company} />
+          <PdfSignatures company={offer.company} clientName={offer.client_name} />
         </View>
         <PdfFooter company={offer.company} offerNumber={offer.offer_number} />
       </Page>
