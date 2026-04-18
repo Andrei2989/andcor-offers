@@ -2,15 +2,13 @@ import { View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import { C } from '../theme';
 import type { PdfCompany } from '../types';
 
-const LOGO_W = 210;
-
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  logoCol: { flexDirection: 'column', gap: 8, width: LOGO_W },
-  logoAndcor: { width: LOGO_W, height: 60, objectFit: 'contain', objectPositionX: 'left' },
-  subLogos: { flexDirection: 'row', alignItems: 'center', gap: 12, width: LOGO_W },
-  logoIveco: { height: 24, flex: 1, objectFit: 'contain', objectPositionX: 'left' },
-  logoIso: { height: 46, width: 46, objectFit: 'contain' },
+  row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  logoCol: { flexDirection: 'column', gap: 6 },
+  logoAndcor: { height: 72, width: 200, objectFit: 'contain', objectPositionX: 'left', objectPositionY: 'center' },
+  subLogos: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoIveco: { height: 18, width: 72, objectFit: 'contain', objectPositionX: 'left' },
+  logoIso: { height: 34, width: 34, objectFit: 'contain' },
   info: { alignItems: 'flex-end' },
   name: { fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 2 },
   line: { fontSize: 8, color: C.g700, lineHeight: 1.35 },
