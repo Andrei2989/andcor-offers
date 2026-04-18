@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from '@react-pdf/renderer';
+import { View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 import { C } from '../theme';
 import type { PdfCompany } from '../types';
 
@@ -10,6 +10,10 @@ const s = StyleSheet.create({
     right: 36,
   },
   rule: { height: 0.5, backgroundColor: C.g200, marginBottom: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  logoIveco: { height: 18, width: 72, objectFit: 'contain' },
+  logoIso: { height: 38, width: 38, objectFit: 'contain' },
+  center: { flex: 1, paddingHorizontal: 8 },
   line: { fontSize: 7.5, color: C.g500, textAlign: 'center', lineHeight: 1.3 },
   pageInfo: {
     fontSize: 8,
@@ -24,18 +28,28 @@ export function PdfFooter({ company, offerNumber }: { company: PdfCompany; offer
   return (
     <View style={s.wrap} fixed>
       <View style={s.rule} />
-      <Text style={s.line}>
-        {company.company_name} • {company.address} • Tel: {company.phone} • {company.email}
-      </Text>
-      <Text style={s.line}>
-        {company.reg_number} • CIF: {company.cif} • Cont: {company.bank_account}
-      </Text>
-      <Text
-        style={s.pageInfo}
-        render={({ pageNumber, totalPages }) =>
-          `Ofertă ${offerNumber} | Pagina ${pageNumber}${totalPages > 1 ? ` din ${totalPages}` : ''}`
-        }
-      />
+      <View style={s.row}>
+        {company.iveco_logo_url
+          ? <Image src={company.iveco_logo_url} style={s.logoIveco} />
+          : <View style={s.logoIveco} />}
+        <View style={s.center}>
+          <Text style={s.line}>
+            {company.company_name} • {company.address} • Tel: {company.phone} • {company.email}
+          </Text>
+          <Text style={s.line}>
+            {company.reg_number} • CIF: {company.cif} • Cont: {company.bank_account}
+          </Text>
+          <Text
+            style={s.pageInfo}
+            render={({ pageNumber, totalPages }) =>
+              `Ofertă ${offerNumber} | Pagina ${pageNumber}${totalPages > 1 ? ` din ${totalPages}` : ''}`
+            }
+          />
+        </View>
+        {company.iso_logo_url
+          ? <Image src={company.iso_logo_url} style={s.logoIso} />
+          : <View style={s.logoIso} />}
+      </View>
     </View>
   );
 }
