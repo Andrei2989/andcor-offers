@@ -161,7 +161,7 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
     notes: state.notes || null,
     status: state.status,
     groups: state.groups.map((g, gi) => ({
-      id: g.id,
+      id: g.id.startsWith('tmp-') ? null : g.id,
       title: g.title,
       sort_order: gi,
       items: g.items.map((it, ii) => ({
