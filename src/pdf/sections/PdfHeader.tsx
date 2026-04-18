@@ -9,16 +9,11 @@ const s = StyleSheet.create({
   subLogos: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: 220,
-    paddingTop: 4,
-    paddingBottom: 2,
-    borderTopWidth: 0.5,
-    borderTopColor: '#cbd5e1',
+    gap: 10,
   },
-  logoIveco: { height: 20, width: 100, objectFit: 'contain' },
-  divider: { width: 0.5, height: 28, backgroundColor: '#cbd5e1' },
   logoIso: { height: 42, width: 42, objectFit: 'contain' },
+  logoIveco: { height: 20, width: 90, objectFit: 'contain' },
+  divider: {},
   info: { alignItems: 'flex-end' },
   name: { fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 2 },
   line: { fontSize: 8, color: C.g700, lineHeight: 1.35 },
@@ -36,14 +31,11 @@ export function PdfHeader({ company }: { company: PdfCompany }) {
             : null}
           {showSub && (
             <View style={s.subLogos}>
-              {company.iveco_logo_url
-                ? <Image src={company.iveco_logo_url} style={s.logoIveco} />
-                : null}
-              {company.iveco_logo_url && company.iso_logo_url
-                ? <View style={s.divider} />
-                : null}
               {company.iso_logo_url
                 ? <Image src={company.iso_logo_url} style={s.logoIso} />
+                : null}
+              {company.iveco_logo_url
+                ? <Image src={company.iveco_logo_url} style={s.logoIveco} />
                 : null}
             </View>
           )}
