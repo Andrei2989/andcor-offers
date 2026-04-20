@@ -4,18 +4,32 @@ import { parseDocument, type ParsedItem } from '@/lib/parseDocument';
 
 interface Props {
   groups: OfferGroup[];
-  onImport: (assignments: { gid: string; items: ParsedItem[] }[]) => void;
+  onImport: (assignments: { gid: string; groupTitle?: string; items: ParsedItem[] }[]) => void;
   onClose: () => void;
 }
 
 type Step = 'upload' | 'loading' | 'preview' | 'error';
 
 const ACCEPTED = '.docx,.xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp';
+const NEW_GROUP_SENTINEL = '__new__';
+
+function tmpId() {
+  return `tmp-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+interface LocalGroup {
+  id: string;
+  title: string;
+  isNew: boolean;
+}
 
 export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
   const [step, setStep] = useState<Step>('upload');
   const [items, setItems] = useState<ParsedItem[]>([]);
   const [itemGroups, setItemGroups] = useState<string[]>([]);
+  const [localGroups, setLocalGroups] = useState<LocalGroup[]>(() =>
+    groups.map((g) => ({ id: g.id, title: g.title, isNew: false }))
+  );
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -34,7 +48,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
       const result = await parseDocument(file, apiKey);
       if (!result.length) throw new Error('Nu au fost găsite articole în document.');
       setItems(result);
-      setItemGroups(result.map(() => groups[0]?.id ?? ''));
+      setItemGroups(result.map(() => localGroups[0]?.id ?? ''));
       setStep('preview');
     } catch (e) {
       setError((e as Error).message);
@@ -59,19 +73,34 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
     setItemGroups((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  function setGroupForItem(idx: number, gid: string) {
-    setItemGroups((prev) => prev.map((g, i) => (i === idx ? gid : g)));
+  function handleGroupSelect(idx: number, value: string) {
+    if (value === NEW_GROUP_SENTINEL) {
+      const title = `Grupa ${localGroups.length + 1}`;
+      const id = tmpId();
+      const newGroup: LocalGroup = { id, title, isNew: true };
+      setLocalGroups((prev) => [...prev, newGroup]);
+      setItemGroups((prev) => prev.map((g, i) => (i === idx ? id : g)));
+    } else {
+      setItemGroups((prev) => prev.map((g, i) => (i === idx ? value : g)));
+    }
+  }
+
+  function renameGroup(id: string, title: string) {
+    setLocalGroups((prev) => prev.map((g) => (g.id === id ? { ...g, title } : g)));
   }
 
   function confirm() {
     if (!items.length) return;
     const map = new Map<string, ParsedItem[]>();
     items.forEach((item, idx) => {
-      const gid = itemGroups[idx] ?? groups[0]?.id ?? '';
+      const gid = itemGroups[idx] ?? localGroups[0]?.id ?? '';
       if (!map.has(gid)) map.set(gid, []);
       map.get(gid)!.push(item);
     });
-    const assignments = Array.from(map.entries()).map(([gid, its]) => ({ gid, items: its }));
+    const assignments = Array.from(map.entries()).map(([gid, its]) => {
+      const lg = localGroups.find((g) => g.id === gid);
+      return { gid, groupTitle: lg?.isNew ? lg.title : undefined, items: its };
+    });
     onImport(assignments);
     onClose();
   }
@@ -123,8 +152,26 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
           {step === 'preview' && (
             <div>
               <p className="text-sm text-ink-500 mb-3">
-                {items.length} articole găsite. Poți elimina rânduri înainte de import.
+                {items.length} articole găsite. Alege grupa pentru fiecare articol sau creează una nouă.
               </p>
+
+              {/* Renamed new groups */}
+              {localGroups.filter((g) => g.isNew).length > 0 && (
+                <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                  <p className="text-xs font-medium text-blue-700 mb-2">Grupe noi — poți redenumi:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {localGroups.filter((g) => g.isNew).map((g) => (
+                      <input
+                        key={g.id}
+                        className="input !py-0.5 !text-xs w-36"
+                        value={g.title}
+                        onChange={(e) => renameGroup(g.id, e.target.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="overflow-x-auto rounded border border-ink-200">
                 <table className="w-full text-sm">
                   <thead className="bg-ink-50 text-ink-500 uppercase text-xs tracking-wide">
@@ -133,7 +180,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                       <th className="text-left px-3 py-2 w-28">Reper fabricație</th>
                       <th className="px-2 py-2 text-center w-12">U/M</th>
                       <th className="px-2 py-2 text-right w-14">Cant.</th>
-                      <th className="px-2 py-2 text-left w-28">Grupă</th>
+                      <th className="px-2 py-2 text-left w-32">Grupă</th>
                       <th className="w-6" />
                     </tr>
                   </thead>
@@ -147,12 +194,15 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                         <td className="px-2 py-2">
                           <select
                             className="input !py-0.5 !text-xs w-full"
-                            value={itemGroups[idx] ?? groups[0]?.id}
-                            onChange={(e) => setGroupForItem(idx, e.target.value)}
+                            value={itemGroups[idx] ?? localGroups[0]?.id}
+                            onChange={(e) => handleGroupSelect(idx, e.target.value)}
                           >
-                            {groups.map((g) => (
-                              <option key={g.id} value={g.id}>{g.title}</option>
+                            {localGroups.map((g) => (
+                              <option key={g.id} value={g.id}>
+                                {g.isNew ? `✦ ${g.title}` : g.title}
+                              </option>
                             ))}
+                            <option value={NEW_GROUP_SENTINEL}>+ Grupă nouă</option>
                           </select>
                         </td>
                         <td className="px-1 py-2 text-center">

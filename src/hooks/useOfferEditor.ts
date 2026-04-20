@@ -8,7 +8,7 @@ type Action =
   | { type: 'REPLACE'; state: OfferEditorState }
   | { type: 'SET_META'; patch: Partial<Omit<OfferEditorState, 'groups' | 'id' | 'offer_number' | 'updated_at'>> }
   | { type: 'SET_STATUS'; status: OfferStatus }
-  | { type: 'ADD_GROUP' }
+  | { type: 'ADD_GROUP'; id?: string; title?: string }
   | { type: 'DEL_GROUP'; gid: string }
   | { type: 'RENAME_GROUP'; gid: string; title: string }
   | { type: 'REORDER_GROUPS'; ids: string[] }
@@ -32,8 +32,8 @@ function reducer(state: OfferEditorState, action: Action): OfferEditorState {
         groups: [
           ...state.groups,
           {
-            id: tempId(),
-            title: `Grupa ${state.groups.length + 1}`,
+            id: action.id ?? tempId(),
+            title: action.title ?? `Grupa ${state.groups.length + 1}`,
             sort_order: state.groups.length,
             items: [],
           },

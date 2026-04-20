@@ -38,8 +38,11 @@ export default function OfferEditor() {
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  function handleImport(assignments: { gid: string; items: ParsedItem[] }[]) {
-    assignments.forEach(({ gid, items }) => {
+  function handleImport(assignments: { gid: string; groupTitle?: string; items: ParsedItem[] }[]) {
+    assignments.forEach(({ gid, groupTitle, items }) => {
+      if (groupTitle) {
+        dispatch({ type: 'ADD_GROUP', id: gid, title: groupTitle });
+      }
       dispatch({ type: 'IMPORT_ITEMS', gid, items });
     });
   }
