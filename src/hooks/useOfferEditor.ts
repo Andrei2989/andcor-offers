@@ -6,7 +6,7 @@ import { saveOfferRpc } from '@/lib/queries';
 
 type Action =
   | { type: 'REPLACE'; state: OfferEditorState }
-  | { type: 'SET_META'; patch: Partial<Omit<OfferEditorState, 'groups' | 'id' | 'offer_number' | 'updated_at'>> }
+  | { type: 'SET_META'; patch: Partial<Omit<OfferEditorState, 'groups' | 'id' | 'updated_at'>> }
   | { type: 'SET_STATUS'; status: OfferStatus }
   | { type: 'ADD_GROUP'; id?: string; title?: string }
   | { type: 'DEL_GROUP'; gid: string }

@@ -63,7 +63,12 @@ export default function OfferEditor() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-xs uppercase tracking-wide text-ink-500">Editare ofertă</div>
-            <h1 className="text-2xl font-bold text-navy font-mono">{state.offer_number}</h1>
+            <input
+              className="text-2xl font-bold text-navy font-mono bg-transparent border-0 border-b-2 border-transparent hover:border-ink-200 focus:border-navy focus:outline-none w-48"
+              value={state.offer_number ?? ''}
+              onChange={(e) => dispatch({ type: 'SET_META', patch: { offer_number: e.target.value } })}
+              spellCheck={false}
+            />
           </div>
           <div className="flex items-center gap-3">
             <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} error={lastError} onRetry={saveNow} />

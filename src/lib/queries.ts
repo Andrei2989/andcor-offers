@@ -144,6 +144,7 @@ export async function createDraftOffer(): Promise<string> {
 
 export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
   const payload = {
+    offer_number: state.offer_number,
     meta: {
       issue_date: state.issue_date,
       validity_days: state.validity_days,
