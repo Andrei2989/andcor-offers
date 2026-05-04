@@ -8,10 +8,10 @@ import {
   fetchCompany,
   fetchOffers,
   keys,
+  patchOfferStatus,
   type OfferListFilters,
 } from '@/lib/queries';
 import { formatDateRO, formatRON } from '@/lib/format';
-import { StatusBadge } from '@/components/StatusBadge';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import type { OfferStatus } from '@/types/db';
 import { pdf } from '@react-pdf/renderer';
@@ -27,6 +27,29 @@ const STATUS_LABEL: Record<OfferStatus, string> = {
   rejected: 'Refuzată',
   expired: 'Expirată',
 };
+
+const STATUS_STYLES: Record<OfferStatus, string> = {
+  draft: 'bg-ink-100 text-ink-700 border-ink-200',
+  sent: 'bg-blue-100 text-blue-800 border-blue-200',
+  accepted: 'bg-green-100 text-green-800 border-green-200',
+  rejected: 'bg-red-100 text-red-800 border-red-200',
+  expired: 'bg-yellow-100 text-yellow-900 border-yellow-200',
+};
+
+function StatusSelect({ status, onChange }: { status: OfferStatus; onChange: (s: OfferStatus) => void }) {
+  return (
+    <select
+      value={status}
+      onChange={(e) => onChange(e.target.value as OfferStatus)}
+      className={`text-xs font-medium rounded-full px-2 py-0.5 border cursor-pointer appearance-none focus:outline-none ${STATUS_STYLES[status]}`}
+      title="Schimbă statusul"
+    >
+      {STATUS_OPTIONS.map((s) => (
+        <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+      ))}
+    </select>
+  );
+}
 
 export default function OffersList() {
   const navigate = useNavigate();
@@ -65,6 +88,11 @@ export default function OffersList() {
 
   const del = useMutation({
     mutationFn: deleteOffer,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['offers'] }),
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: OfferStatus }) => patchOfferStatus(id, status),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['offers'] }),
   });
 
@@ -182,7 +210,12 @@ export default function OffersList() {
                     : <span className="text-ink-500">—</span>}
                 </td>
                 <td className="px-4 py-2 text-right font-medium">{formatRON(Number(o.total))}</td>
-                <td className="px-4 py-2"><StatusBadge status={o.status} /></td>
+                <td className="px-4 py-2">
+                  <StatusSelect
+                    status={o.status}
+                    onChange={(s) => changeStatus.mutate({ id: o.id, status: s })}
+                  />
+                </td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => navigate(`/offers/${o.id}/edit`)}>Editează</button>
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => dup.mutate(o.id)}>Duplică</button>

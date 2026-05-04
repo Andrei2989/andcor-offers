@@ -183,6 +183,11 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
   if (error) throw error;
 }
 
+export async function patchOfferStatus(id: string, status: OfferStatus): Promise<void> {
+  const { error } = await supabase.from('offers').update({ status }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function duplicateOfferRpc(srcId: string): Promise<string> {
   const { data, error } = await supabase.rpc('duplicate_offer', { src_id: srcId });
   if (error) throw error;
