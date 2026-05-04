@@ -64,8 +64,9 @@ export default function OfferEditor() {
           <div>
             <div className="text-xs uppercase tracking-wide text-ink-500">Editare ofertă</div>
             <input
-              className="text-2xl font-bold text-navy font-mono bg-transparent border-0 border-b-2 border-transparent hover:border-ink-200 focus:border-navy focus:outline-none w-48"
+              className="text-2xl font-bold text-navy font-mono bg-transparent border-0 border-b-2 border-transparent hover:border-ink-200 focus:border-navy focus:outline-none w-48 placeholder:text-ink-300"
               value={state.offer_number ?? ''}
+              placeholder="Nr. ofertă"
               onChange={(e) => dispatch({ type: 'SET_META', patch: { offer_number: e.target.value } })}
               spellCheck={false}
             />
