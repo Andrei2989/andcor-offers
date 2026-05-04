@@ -16,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { deleteOffer, fetchCompany, fetchOfferEditor, keys } from '@/lib/queries';
 import { useOfferEditor } from '@/hooks/useOfferEditor';
 import { SaveIndicator } from '@/components/editor/SaveIndicator';
+import { ClientPickerModal } from '@/components/editor/ClientPickerModal';
 import { GroupCard } from '@/components/editor/GroupCard';
 import { PdfPreviewPane } from '@/components/PdfPreviewPane';
 import { toPdfOffer } from '@/lib/viewmodel';
@@ -206,9 +207,19 @@ function MetadataCard({ state, dispatch }: Pick<ReturnType<typeof useOfferEditor
 }
 
 function ClientCard({ state, dispatch }: Pick<ReturnType<typeof useOfferEditor>, 'state' | 'dispatch'>) {
+  const [showPicker, setShowPicker] = useState(false);
+
   return (
     <div className="card p-4 mb-4">
-      <h2 className="font-semibold text-navy mb-3">Client (opțional)</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold text-navy">Client (opțional)</h2>
+        <button
+          className="btn-secondary !text-xs !py-1"
+          onClick={() => setShowPicker(true)}
+        >
+          📋 Alege din listă
+        </button>
+      </div>
       <div className="grid md:grid-cols-3 gap-3">
         <Field label="Nume">
           <input
@@ -232,6 +243,22 @@ function ClientCard({ state, dispatch }: Pick<ReturnType<typeof useOfferEditor>,
           />
         </Field>
       </div>
+
+      {showPicker && (
+        <ClientPickerModal
+          onSelect={(c) =>
+            dispatch({
+              type: 'SET_META',
+              patch: {
+                client_name: c.client_name,
+                client_cif: c.client_cif,
+                client_address: c.client_address,
+              },
+            })
+          }
+          onClose={() => setShowPicker(false)}
+        />
+      )}
     </div>
   );
 }

@@ -183,6 +183,35 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
   if (error) throw error;
 }
 
+export interface ClientEntry {
+  client_name: string;
+  client_cif: string;
+  client_address: string;
+}
+
+export async function fetchClientList(): Promise<ClientEntry[]> {
+  const { data, error } = await supabase
+    .from('offers')
+    .select('client_name, client_cif, client_address')
+    .not('client_name', 'is', null)
+    .neq('client_name', '')
+    .order('client_name');
+  if (error) throw error;
+
+  // Deduplicate by client_name, keeping the most recent entry's cif/address
+  const seen = new Map<string, ClientEntry>();
+  for (const row of (data ?? []) as ClientEntry[]) {
+    if (!seen.has(row.client_name)) {
+      seen.set(row.client_name, {
+        client_name: row.client_name,
+        client_cif: row.client_cif ?? '',
+        client_address: row.client_address ?? '',
+      });
+    }
+  }
+  return [...seen.values()];
+}
+
 export async function patchOfferStatus(id: string, status: OfferStatus): Promise<void> {
   const { error } = await supabase.from('offers').update({ status }).eq('id', id);
   if (error) throw error;

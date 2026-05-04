@@ -160,6 +160,7 @@ export function useOfferEditor(initial: OfferEditorState | null) {
         setSaveStatus('saved');
         setLastSavedAt(Date.now());
         qc.invalidateQueries({ queryKey: ['offers'] });
+        qc.invalidateQueries({ queryKey: ['client_list'] });
       })
       .catch((err) => {
         setSaveStatus('error');
