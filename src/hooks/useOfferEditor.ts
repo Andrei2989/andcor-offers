@@ -132,12 +132,26 @@ export function useOfferEditor(initial: OfferEditorState | null) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const floorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inflight = useRef<Promise<void> | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const qc = useQueryClient();
 
   // Replace state when initial loads from server.
   useEffect(() => {
     if (initial) dispatch({ type: 'REPLACE', state: initial });
   }, [initial?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On unmount: cancel timers and flush any unsaved changes to DB.
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      if (floorTimer.current) clearTimeout(floorTimer.current);
+      const s = stateRef.current;
+      if (dirtyRef.current && s?.id && s?.groups?.length >= 0) {
+        saveOfferRpc(s).catch(() => {});
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doSave = useCallback(async () => {
     if (!state?.id) return;
