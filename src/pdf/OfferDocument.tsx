@@ -7,7 +7,6 @@ import { PdfMetaBox } from './sections/PdfMetaBox';
 import { PdfGroupTable } from './sections/PdfGroupTable';
 import { PdfTerms } from './sections/PdfTerms';
 import { PdfClientBox } from './sections/PdfClientBox';
-import { PdfSignatures } from './sections/PdfSignatures';
 import { PdfFooter } from './sections/PdfFooter';
 
 const s = StyleSheet.create({
@@ -35,7 +34,6 @@ export function OfferDocument({ offer }: { offer: PdfOffer }) {
             <PdfGroupTable key={i} group={g} />
           ))}
           <PdfTerms offer={offer} company={offer.company} />
-          <PdfSignatures company={offer.company} clientName={offer.client_name} />
         </View>
         <PdfFooter company={offer.company} offerNumber={offer.offer_number} />
       </Page>
