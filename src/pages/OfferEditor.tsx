@@ -72,6 +72,13 @@ export default function OfferEditor() {
           </div>
           <div className="flex items-center gap-3">
             <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} error={lastError} onRetry={saveNow} />
+            <button
+              className="btn-primary !text-xs !py-1.5"
+              onClick={saveNow}
+              disabled={saveStatus === 'saving'}
+            >
+              {saveStatus === 'saving' ? 'Se salvează…' : 'Salvează'}
+            </button>
             <button className="btn-secondary !text-xs !py-1.5" onClick={() => setShowImport(true)}>
               Import document
             </button>
