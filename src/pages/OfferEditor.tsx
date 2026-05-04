@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { ImportDocumentModal } from '@/components/editor/ImportDocumentModal';
 import type { ParsedItem } from '@/lib/parseDocument';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   closestCenter,
   DndContext,
@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { fetchCompany, fetchOfferEditor, keys } from '@/lib/queries';
+import { deleteOffer, fetchCompany, fetchOfferEditor, keys } from '@/lib/queries';
 import { useOfferEditor } from '@/hooks/useOfferEditor';
 import { SaveIndicator } from '@/components/editor/SaveIndicator';
 import { GroupCard } from '@/components/editor/GroupCard';
@@ -34,9 +34,21 @@ export default function OfferEditor() {
   });
   const { data: company } = useQuery({ queryKey: keys.company, queryFn: fetchCompany });
   const { state, dispatch, saveStatus, lastSavedAt, lastError, saveNow } = useOfferEditor(initial ?? null);
+  const qc = useQueryClient();
 
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [showImport, setShowImport] = useState(false);
+
+  // If the offer was never saved (empty offer_number) and user navigates back,
+  // delete the empty draft so it doesn't pollute the list.
+  async function handleBack() {
+    const isUnsavedNew = !state?.offer_number?.trim() && lastSavedAt === null;
+    if (isUnsavedNew && id) {
+      await deleteOffer(id).catch(() => {});
+      qc.invalidateQueries({ queryKey: ['offers'] });
+    }
+    navigate('/');
+  }
 
   function handleImport(assignments: { gid: string; groupTitle?: string; items: ParsedItem[] }[]) {
     assignments.forEach(({ gid, groupTitle, items }) => {
@@ -83,7 +95,7 @@ export default function OfferEditor() {
             <button className="btn-secondary !text-xs !py-1.5" onClick={() => setShowImport(true)}>
               Import document
             </button>
-            <button className="btn-secondary !text-xs !py-1.5" onClick={() => navigate('/')}>
+            <button className="btn-secondary !text-xs !py-1.5" onClick={handleBack}>
               Înapoi la listă
             </button>
             <button
