@@ -10,6 +10,20 @@ export interface ParsedItem {
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 
+const SYSTEM_PROMPT = `You are a procurement document parser. Extract all line items and return ONLY a valid JSON array.
+Each element must have:
+- "name": the FULL original product description, unchanged, including all details (do NOT truncate or summarize)
+- "manufacturer_ref": part code, OEM code, or chassis/VIN number found in the row (e.g. "253206170R", "VF1HJD40166029576"); empty string if none
+- "unit": unit of measure from the document (BUC, SET, KIT, L, KG, litri, etc.); use "buc" if missing
+- "quantity": numeric quantity from the document
+
+Rules:
+- Extract EVERY product row, do not skip any
+- Preserve the exact original text for "name", do not translate or shorten
+- Ignore header rows, total rows, and footnotes
+- Do not wrap output in markdown code blocks
+- Output ONLY the JSON array, nothing else`;
+
 async function callClaude(
   content: Array<{ type: string; [k: string]: unknown }>,
   apiKey: string
@@ -23,16 +37,15 @@ async function callClaude(
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
-      system:
-        'You are a procurement document parser. Extract all line items and return ONLY a valid JSON array. Each element must have:\n- "name": the FULL original product description, unchanged, including all details\n- "manufacturer_ref": if the description contains a part code, OEM code, or vehicle identification number (VIN/chassis like "VF1HJD40166029576"), extract just that code here; also extract codes like "253206170R" or similar alphanumeric references; empty string if none found\n- "unit": unit of measure (BUC, SET, KIT, L, KG — use value from document or "buc" if missing)\n- "quantity": numeric value\nIgnore headers, totals, footnotes. Do not wrap in markdown. Output only the JSON array.',
+      model: 'claude-opus-4-5-20251101',
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
           content: [
             ...content,
-            { type: 'text', text: 'Extract all line items as a JSON array [{name, manufacturer_ref, unit, quantity}].' },
+            { type: 'text', text: 'Extract all product line items as a JSON array [{name, manufacturer_ref, unit, quantity}]. Include every row.' },
           ],
         },
       ],
@@ -60,12 +73,60 @@ async function callClaude(
     }));
 }
 
+/** Extract DOCX text preserving table structure as tab-separated rows */
 async function extractDocxText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(buf);
   const xml = await zip.file('word/document.xml')?.async('text');
   if (!xml) throw new Error('word/document.xml not found in docx');
-  return xml.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ').trim();
+
+  const lines: string[] = [];
+
+  // Extract table rows preserving cell boundaries
+  const tableRowRegex = /<w:tr[ >][\s\S]*?<\/w:tr>/g;
+  const cellRegex = /<w:tc[ >][\s\S]*?<\/w:tc>/g;
+  const textRegex = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g;
+
+  let tableMatch;
+  const tableRows = new Set<string>();
+
+  while ((tableMatch = tableRowRegex.exec(xml)) !== null) {
+    const row = tableMatch[0];
+    const cells: string[] = [];
+    let cellMatch;
+    while ((cellMatch = cellRegex.exec(row)) !== null) {
+      const cellText: string[] = [];
+      let tMatch;
+      while ((tMatch = textRegex.exec(cellMatch[0])) !== null) {
+        if (tMatch[1].trim()) cellText.push(tMatch[1]);
+      }
+      cells.push(cellText.join(''));
+      textRegex.lastIndex = 0;
+    }
+    cellRegex.lastIndex = 0;
+    const line = cells.join('\t');
+    if (line.trim()) {
+      tableRows.add(tableMatch.index.toString());
+      lines.push(line);
+    }
+  }
+
+  // Extract non-table paragraphs
+  const paraRegex = /<w:p[ >][\s\S]*?<\/w:p>/g;
+  let paraMatch;
+  while ((paraMatch = paraRegex.exec(xml)) !== null) {
+    // Skip if this paragraph is inside a table row we already captured
+    const paraText: string[] = [];
+    let tMatch;
+    while ((tMatch = textRegex.exec(paraMatch[0])) !== null) {
+      if (tMatch[1].trim()) paraText.push(tMatch[1]);
+    }
+    textRegex.lastIndex = 0;
+    const line = paraText.join(' ').trim();
+    if (line) lines.push(line);
+  }
+
+  return lines.join('\n');
 }
 
 function extractXlsxText(file: File): Promise<string> {
