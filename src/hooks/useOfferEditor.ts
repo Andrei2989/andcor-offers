@@ -129,11 +129,7 @@ export function useOfferEditor(initial: OfferEditorState | null) {
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const dirtyRef = useRef(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const floorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inflight = useRef<Promise<void> | null>(null);
-  const stateRef = useRef(state);
-  stateRef.current = state;
   const qc = useQueryClient();
 
   // Replace state when initial loads from server.
@@ -141,25 +137,24 @@ export function useOfferEditor(initial: OfferEditorState | null) {
     if (initial) dispatch({ type: 'REPLACE', state: initial });
   }, [initial?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // On unmount: cancel timers and flush any unsaved changes to DB.
+  // beforeunload guard — warn if there are unsaved changes.
   useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      if (floorTimer.current) clearTimeout(floorTimer.current);
-      const s = stateRef.current;
-      if (dirtyRef.current && s?.id && s?.groups?.length >= 0) {
-        saveOfferRpc(s).catch(() => {});
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirtyRef.current || saveStatus === 'saving') {
+        e.preventDefault();
+        e.returnValue = '';
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [saveStatus]);
 
   const doSave = useCallback(async () => {
     if (!state?.id) return;
-    if (inflight.current) return; // coalesce — the in-flight save will pick up newer state via the ref
+    if (inflight.current) return;
     setSaveStatus('saving');
     setLastError(null);
-    const snapshot = state;
-    inflight.current = saveOfferRpc(snapshot)
+    inflight.current = saveOfferRpc(state)
       .then(() => {
         dirtyRef.current = false;
         setSaveStatus('saved');
@@ -172,52 +167,21 @@ export function useOfferEditor(initial: OfferEditorState | null) {
       })
       .finally(() => {
         inflight.current = null;
-        // If we got dirty again during the save, schedule another pass.
-        if (dirtyRef.current) scheduleSave();
       });
     await inflight.current;
   }, [state, qc]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const scheduleSave = useCallback(() => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => doSave(), 500);
-    if (!floorTimer.current) {
-      floorTimer.current = setTimeout(() => {
-        floorTimer.current = null;
-        if (dirtyRef.current) doSave();
-      }, 5000);
-    }
-  }, [doSave]);
-
-  // Wrap dispatch so any action that mutates marks dirty + schedules save.
+  // Wrap dispatch: mark dirty + reset save indicator so user sees "Nesalvat".
   const dispatchAndSave = useCallback(
     (action: Action) => {
       dispatch(action);
       if (action.type !== 'REPLACE') {
         dirtyRef.current = true;
-        // localStorage snapshot — taken on next tick so state has updated.
-        setTimeout(() => {
-          try {
-            if (state?.id) localStorage.setItem(`offer:${state.id}`, JSON.stringify(state));
-          } catch {/* quota */}
-        }, 0);
-        scheduleSave();
+        setSaveStatus('idle');
       }
     },
-    [scheduleSave, state]
+    []
   );
-
-  // beforeunload guard
-  useEffect(() => {
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirtyRef.current || saveStatus === 'saving') {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [saveStatus]);
 
   return { state, dispatch: dispatchAndSave, saveStatus, lastSavedAt, lastError, saveNow: doSave };
 }

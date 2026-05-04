@@ -75,7 +75,10 @@ export default function OffersList() {
 
   const newDraft = useMutation({
     mutationFn: createDraftOffer,
-    onSuccess: (id) => navigate(`/offers/${id}/edit`),
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ['offers'] });
+      navigate(`/offers/${id}/edit`);
+    },
   });
 
   const dup = useMutation({
