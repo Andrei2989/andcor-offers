@@ -174,6 +174,15 @@ export function useOfferEditor(initial: OfferEditorState | null) {
     await inflight.current;
   }, [state, qc]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-save 2 seconds after the last change.
+  useEffect(() => {
+    if (!dirtyRef.current || !state?.id) return;
+    const timer = setTimeout(() => {
+      doSave();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Wrap dispatch: mark dirty + reset save indicator so user sees "Nesalvat".
   const dispatchAndSave = useCallback(
     (action: Action) => {
