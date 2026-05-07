@@ -70,8 +70,8 @@ export function GroupCard({
               <th className="px-1 py-1">Cod reper</th>
               <th className="px-1 py-1 w-14">U/M</th>
               <th className="px-1 py-1 w-20 text-right">Cant.</th>
-              <th className="px-1 py-1 w-28 text-right">Preț unitar</th>
               <th className="px-1 py-1 w-28 text-right text-amber-700">Preț achiziție</th>
+              <th className="px-1 py-1 w-28 text-right">Preț unitar</th>
               <th className="px-1 py-1 w-28 text-right">Valoare</th>
               <th className="w-10"></th>
             </tr>
