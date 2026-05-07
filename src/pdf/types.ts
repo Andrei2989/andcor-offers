@@ -9,6 +9,7 @@ export interface PdfOfferItem {
   unit: string;
   quantity: number;
   unit_price: number;
+  purchase_price: number;
 }
 
 export interface PdfOfferGroup {
@@ -32,6 +33,7 @@ export interface PdfCompany {
 
 export interface PdfOffer {
   offer_number: string;
+  showPurchasePrice?: boolean;
   issue_date: string;        // YYYY-MM-DD
   valid_until: string;       // YYYY-MM-DD
   validity_days: number;

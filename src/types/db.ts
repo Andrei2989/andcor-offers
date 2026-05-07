@@ -60,6 +60,7 @@ export interface OfferItemRow {
   unit: string;
   quantity: number;
   unit_price: number;
+  purchase_price: number;
 }
 
 // ---------- Editor / view model ----------
@@ -72,6 +73,7 @@ export interface OfferItem {
   unit: string;
   quantity: number;
   unit_price: number;
+  purchase_price: number;
 }
 
 export interface OfferGroup {

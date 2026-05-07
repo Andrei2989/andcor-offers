@@ -39,6 +39,7 @@ export function toPdfOffer(state: OfferEditorState, company: CompanySettings | n
         unit: i.unit,
         quantity: i.quantity,
         unit_price: i.unit_price,
+        purchase_price: i.purchase_price,
       })),
     })),
   };

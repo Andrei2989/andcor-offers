@@ -31,7 +31,7 @@ export function OfferDocument({ offer }: { offer: PdfOffer }) {
           <PdfMetaBox offer={offer} />
           <PdfClientBox offer={offer} />
           {offer.groups.map((g, i) => (
-            <PdfGroupTable key={i} group={g} />
+            <PdfGroupTable key={i} group={g} showPurchasePrice={offer.showPurchasePrice} />
           ))}
           <PdfTerms offer={offer} company={offer.company} />
         </View>

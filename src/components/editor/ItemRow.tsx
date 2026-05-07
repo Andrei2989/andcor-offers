@@ -94,6 +94,14 @@ export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
           value={item.unit_price}
           onChange={(v) => onPatch({ unit_price: v ?? 0 })}
           min={0}
+        />
+      </td>
+      <td className={`${baseCell} w-28`}>
+        <NumberInput
+          className={`${inputCls} text-right text-amber-700`}
+          value={item.purchase_price}
+          onChange={(v) => onPatch({ purchase_price: v ?? 0 })}
+          min={0}
           onKeyDown={(e) => handleTabToNext(e, true)}
         />
       </td>

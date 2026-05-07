@@ -100,6 +100,7 @@ function composeEditor(
       unit: i.unit,
       quantity: Number(i.quantity),
       unit_price: Number(i.unit_price),
+      purchase_price: Number(i.purchase_price ?? 0),
     });
   }
   const orderedGroups = [...byGroup.values()]
@@ -173,6 +174,7 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
         unit: it.unit,
         quantity: it.quantity,
         unit_price: it.unit_price,
+        purchase_price: it.purchase_price,
       })),
     })),
   };

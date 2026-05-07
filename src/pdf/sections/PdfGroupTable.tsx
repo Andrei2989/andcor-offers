@@ -7,8 +7,7 @@ import { formatNumberRO } from '@/lib/format';
 import { groupTotal } from '@/lib/totals';
 import type { PdfOfferGroup, PdfOfferItem } from '../types';
 
-// Column widths (as flex ratios). Sum should be 100.
-const COLS = [
+const COLS_BASE = [
   { key: 'nr',   flex: 5,  align: 'center' as const },
   { key: 'name', flex: 24, align: 'left'   as const },
   { key: 'ref',  flex: 15, align: 'center' as const },
@@ -19,14 +18,38 @@ const COLS = [
   { key: 'val',  flex: 15, align: 'right'  as const },
 ];
 
-const HEADERS = [
+const COLS_WITH_PURCHASE = [
+  { key: 'nr',       flex: 5,  align: 'center' as const },
+  { key: 'name',     flex: 21, align: 'left'   as const },
+  { key: 'ref',      flex: 13, align: 'center' as const },
+  { key: 'code',     flex: 12, align: 'center' as const },
+  { key: 'um',       flex: 5,  align: 'center' as const },
+  { key: 'qty',      flex: 6,  align: 'center' as const },
+  { key: 'purchase', flex: 13, align: 'right'  as const },
+  { key: 'unit',     flex: 12, align: 'right'  as const },
+  { key: 'val',      flex: 13, align: 'right'  as const },
+];
+
+const HEADERS_BASE = [
   'Nr.',
   'Denumire produs / serviciu',
-  'Reper fabricație /\nSerie șasiu',
+  'Reper fabricaţie /\nSerie şasiu',
   'Cod reper',
   'U/M',
   'Cant.',
-  'Preț unitar\n(RON, fără TVA)',
+  'Preţ unitar\n(RON, fără TVA)',
+  'Valoare\n(RON, fără TVA)',
+];
+
+const HEADERS_WITH_PURCHASE = [
+  'Nr.',
+  'Denumire produs / serviciu',
+  'Reper fabricaţie /\nSerie şasiu',
+  'Cod reper',
+  'U/M',
+  'Cant.',
+  'Preţ achiziţie\n(RON, fără TVA)',
+  'Preţ unitar\n(RON, fără TVA)',
   'Valoare\n(RON, fără TVA)',
 ];
 
@@ -87,7 +110,9 @@ const s = StyleSheet.create({
   },
 });
 
-function HeaderRow() {
+function HeaderRow({ showPurchasePrice }: { showPurchasePrice: boolean }) {
+  const COLS = showPurchasePrice ? COLS_WITH_PURCHASE : COLS_BASE;
+  const HEADERS = showPurchasePrice ? HEADERS_WITH_PURCHASE : HEADERS_BASE;
   return (
     <View style={s.headerRow} fixed>
       {HEADERS.map((h, i) => (
@@ -105,17 +130,31 @@ function HeaderRow() {
   );
 }
 
-function ItemRow({ item, idx, alt }: { item: PdfOfferItem; idx: number; alt: boolean }) {
-  const cells = [
-    String(idx + 1),
-    item.name,
-    item.manufacturer_ref,
-    item.part_code,
-    item.unit,
-    formatNumberRO(item.quantity),
-    formatNumberRO(item.unit_price),
-    formatNumberRO(item.quantity * item.unit_price),
-  ];
+function ItemRow({ item, idx, alt, showPurchasePrice }: { item: PdfOfferItem; idx: number; alt: boolean; showPurchasePrice: boolean }) {
+  const COLS = showPurchasePrice ? COLS_WITH_PURCHASE : COLS_BASE;
+  const cells = showPurchasePrice
+    ? [
+        String(idx + 1),
+        item.name,
+        item.manufacturer_ref,
+        item.part_code,
+        item.unit,
+        formatNumberRO(item.quantity),
+        formatNumberRO(item.purchase_price),
+        formatNumberRO(item.unit_price),
+        formatNumberRO(item.quantity * item.unit_price),
+      ]
+    : [
+        String(idx + 1),
+        item.name,
+        item.manufacturer_ref,
+        item.part_code,
+        item.unit,
+        formatNumberRO(item.quantity),
+        formatNumberRO(item.unit_price),
+        formatNumberRO(item.quantity * item.unit_price),
+      ];
+  const valIdx = cells.length - 1;
   return (
     <View style={alt ? [s.row, s.rowAlt] : s.row} wrap={false}>
       {cells.map((c, i) => {
@@ -123,7 +162,7 @@ function ItemRow({ item, idx, alt }: { item: PdfOfferItem; idx: number; alt: boo
           s.cell,
           { flex: COLS[i].flex, textAlign: COLS[i].align },
         ];
-        if (i === 7) styles.push(s.valueCell);
+        if (i === valIdx) styles.push(s.valueCell);
         if (i === cells.length - 1) styles.push(s.cellLast);
         return <Text key={i} style={styles}>{c}</Text>;
       })}
@@ -131,29 +170,31 @@ function ItemRow({ item, idx, alt }: { item: PdfOfferItem; idx: number; alt: boo
   );
 }
 
-function TotalRow({ total }: { total: number }) {
-  const labelFlex = COLS.slice(0, 7).reduce((acc, c) => acc + c.flex, 0);
+function TotalRow({ total, showPurchasePrice }: { total: number; showPurchasePrice: boolean }) {
+  const COLS = showPurchasePrice ? COLS_WITH_PURCHASE : COLS_BASE;
+  const valCol = COLS[COLS.length - 1];
+  const labelFlex = COLS.slice(0, COLS.length - 1).reduce((acc, c) => acc + c.flex, 0);
   return (
     <View style={s.totalRow} wrap={false}>
       <Text style={[s.totalLabel, { flex: labelFlex }]}>TOTAL (fără TVA)</Text>
-      <Text style={[s.totalValue, { flex: COLS[7].flex }]}>
-        {formatNumberRO(total)}{'\u00A0'}RON
+      <Text style={[s.totalValue, { flex: valCol.flex }]}>
+        {formatNumberRO(total)}{' '}RON
       </Text>
     </View>
   );
 }
 
-export function PdfGroupTable({ group }: { group: PdfOfferGroup }) {
+export function PdfGroupTable({ group, showPurchasePrice = false }: { group: PdfOfferGroup; showPurchasePrice?: boolean }) {
   const total = groupTotal({ id: '', title: '', sort_order: 0, items: group.items.map((i, idx) => ({ ...i, id: `${idx}` })) });
   return (
     <View>
       <Text style={s.title}>{group.title}</Text>
       <View style={s.table}>
-        <HeaderRow />
+        <HeaderRow showPurchasePrice={showPurchasePrice} />
         {group.items.map((item, idx) => (
-          <ItemRow key={idx} item={item} idx={idx} alt={idx % 2 === 1} />
+          <ItemRow key={idx} item={item} idx={idx} alt={idx % 2 === 1} showPurchasePrice={showPurchasePrice} />
         ))}
-        <TotalRow total={total} />
+        <TotalRow total={total} showPurchasePrice={showPurchasePrice} />
       </View>
     </View>
   );

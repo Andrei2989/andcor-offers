@@ -71,6 +71,7 @@ function reducer(state: OfferEditorState, action: Action): OfferEditorState {
             unit: 'buc',
             quantity: 1,
             unit_price: 0,
+            purchase_price: 0,
           },
         ],
       }));
@@ -103,6 +104,7 @@ function reducer(state: OfferEditorState, action: Action): OfferEditorState {
             unit: item.unit,
             quantity: item.quantity,
             unit_price: 0,
+            purchase_price: 0,
           })),
         ],
       }));

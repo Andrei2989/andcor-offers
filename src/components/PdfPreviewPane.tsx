@@ -4,7 +4,14 @@ import { OfferDocument } from '@/pdf/OfferDocument';
 import type { PdfOffer } from '@/pdf/types';
 
 export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
-  const doc = useMemo(() => <OfferDocument offer={offer} />, [offer]);
+  const [showPurchasePrice, setShowPurchasePrice] = useState(false);
+
+  const offerWithFlag = useMemo(
+    () => ({ ...offer, showPurchasePrice }),
+    [offer, showPurchasePrice]
+  );
+
+  const doc = useMemo(() => <OfferDocument offer={offerWithFlag} />, [offerWithFlag]);
   const [instance, updateInstance] = usePDF({ document: doc });
   const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
 
@@ -19,19 +26,30 @@ export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
         <span>
           {instance.loading ? 'Actualizare…' : instance.error ? 'Eroare generare' : 'Previzualizare actualizată'}
         </span>
-        {instance.url ? (
-          <a
-            href={instance.url}
-            download={`Oferta_${offer.offer_number}.pdf`}
-            className="btn-primary !py-1 !px-3 !text-xs"
-          >
-            Descarcă PDF
-          </a>
-        ) : null}
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 cursor-pointer select-none text-ink-600">
+            <input
+              type="checkbox"
+              checked={showPurchasePrice}
+              onChange={(e) => setShowPurchasePrice(e.target.checked)}
+              className="rounded border-ink-300"
+            />
+            Preț achiziție în PDF
+          </label>
+          {instance.url ? (
+            <a
+              href={instance.url}
+              download={`Oferta_${offer.offer_number}.pdf`}
+              className="btn-primary !py-1 !px-3 !text-xs"
+            >
+              Descarcă PDF
+            </a>
+          ) : null}
+        </div>
       </div>
       {instance.url ? (
         <iframe
-          key={lastUpdated /* stable when url changes, avoids full reload */}
+          key={lastUpdated}
           src={instance.url}
           title="Previzualizare ofertă"
           className="flex-1 w-full border-0"
