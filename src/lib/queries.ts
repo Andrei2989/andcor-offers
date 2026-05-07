@@ -132,7 +132,7 @@ export async function createDraftOffer(): Promise<string> {
   // A default first group is seeded so the editor opens with something editable.
   const { data: offer, error } = await supabase
     .from('offers')
-    .insert({ offer_number: '' })
+    .insert({})
     .select('id')
     .single();
   if (error) throw error;

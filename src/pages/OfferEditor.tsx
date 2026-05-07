@@ -40,10 +40,10 @@ export default function OfferEditor() {
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  // Delete the draft only if truly empty: never saved AND no meaningful content added.
+  // Delete the draft only if truly empty: never saved AND no items AND no client set.
   async function handleBack() {
     const totalItems = state?.groups?.reduce((sum, g) => sum + g.items.length, 0) ?? 0;
-    const hasContent = totalItems > 0 || state?.offer_number?.trim() || state?.client_name?.trim();
+    const hasContent = totalItems > 0 || state?.client_name?.trim();
     const neverSaved = lastSavedAt === null;
     if (neverSaved && !hasContent && id) {
       await deleteOffer(id).catch(() => {});
