@@ -37,6 +37,7 @@ export interface OfferRow {
   status: OfferStatus;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface OfferWithTotal extends OfferRow {

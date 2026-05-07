@@ -8,6 +8,7 @@ import Settings from '@/pages/Settings';
 import CustomerPage from '@/pages/CustomerPage';
 import Login from '@/pages/Login';
 import DevPdf from '@/pages/DevPdf';
+import TrashPage from '@/pages/TrashPage';
 
 export default function App() {
   // Dev-only route is always available — useful when Supabase isn't configured yet.
@@ -49,6 +50,7 @@ function ProtectedShell() {
         <Route index element={<OffersList />} />
         <Route path="offers/:id/edit" element={<OfferEditor />} />
         <Route path="customers/:clientName" element={<CustomerPage />} />
+        <Route path="trash" element={<TrashPage />} />
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

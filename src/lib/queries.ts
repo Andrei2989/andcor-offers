@@ -226,8 +226,32 @@ export async function duplicateOfferRpc(srcId: string): Promise<string> {
 }
 
 export async function deleteOffer(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('offers')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function restoreOffer(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('offers')
+    .update({ deleted_at: null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function permanentDeleteOffer(id: string): Promise<void> {
   const { error } = await supabase.from('offers').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function fetchDeletedOffers(): Promise<OfferWithTotal[]> {
+  const { data, error } = await supabase
+    .from('deleted_offers_with_total')
+    .select('*');
+  if (error) throw error;
+  return data as OfferWithTotal[];
 }
 
 export async function uploadLogo(
