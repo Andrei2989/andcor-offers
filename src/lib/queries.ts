@@ -60,7 +60,7 @@ export async function fetchOffers(filters: OfferListFilters = {}): Promise<Offer
 export async function fetchOfferEditor(id: string): Promise<OfferEditorState> {
   const [{ data: offer, error: e1 }, { data: groups, error: e2 }, { data: items, error: e3 }] =
     await Promise.all([
-      supabase.from('offers').select('*').eq('id', id).single(),
+      supabase.from('offers').select('*').eq('id', id).is('deleted_at', null).single(),
       supabase.from('offer_groups').select('*').eq('offer_id', id).order('sort_order'),
       supabase
         .from('offer_items')
@@ -195,6 +195,7 @@ export async function fetchClientList(): Promise<ClientEntry[]> {
   const { data, error } = await supabase
     .from('offers')
     .select('client_name, client_cif, client_address')
+    .is('deleted_at', null)
     .not('client_name', 'is', null)
     .neq('client_name', '')
     .order('client_name');

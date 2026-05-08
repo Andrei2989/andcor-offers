@@ -77,7 +77,7 @@ export default function OffersList() {
     mutationFn: createDraftOffer,
     onSuccess: (id) => {
       qc.invalidateQueries({ queryKey: ['offers'] });
-      navigate(`/offers/${id}/edit`);
+      navigate(`/offers/${id}/edit`, { state: { isNew: true } });
     },
   });
 

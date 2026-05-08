@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ImportDocumentModal } from '@/components/editor/ImportDocumentModal';
 import type { ParsedItem } from '@/lib/parseDocument';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   closestCenter,
@@ -27,6 +27,8 @@ import { offerTotal } from '@/lib/totals';
 export default function OfferEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isNewDraft = Boolean((location.state as { isNew?: boolean } | null)?.isNew);
 
   const { data: initial, isLoading, error } = useQuery({
     queryKey: keys.offer(id!),
@@ -40,12 +42,13 @@ export default function OfferEditor() {
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
-  // Delete the draft only if truly empty: never saved AND no items AND no client set.
+  // Delete the draft only if it was just created (isNewDraft), never saved, and has no content.
+  // Checking isNewDraft prevents accidentally soft-deleting existing offers that happen to be empty.
   async function handleBack() {
     const totalItems = state?.groups?.reduce((sum, g) => sum + g.items.length, 0) ?? 0;
     const hasContent = totalItems > 0 || state?.client_name?.trim();
     const neverSaved = lastSavedAt === null;
-    if (neverSaved && !hasContent && id) {
+    if (isNewDraft && neverSaved && !hasContent && id) {
       await deleteOffer(id).catch(() => {});
       qc.invalidateQueries({ queryKey: ['offers'] });
     }
