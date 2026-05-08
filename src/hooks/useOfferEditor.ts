@@ -132,6 +132,9 @@ export function useOfferEditor(initial: OfferEditorState | null) {
   const [lastError, setLastError] = useState<string | null>(null);
   const dirtyRef = useRef(false);
   const inflight = useRef<Promise<void> | null>(null);
+  // Always holds the latest state so doSave never captures a stale closure.
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const qc = useQueryClient();
 
   // Replace state when initial loads from server.
@@ -151,12 +154,18 @@ export function useOfferEditor(initial: OfferEditorState | null) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [saveStatus]);
 
+  // doSave reads stateRef.current so it always saves the latest state regardless
+  // of when the closure was created. It also retries after completion when new
+  // changes arrived while the previous save was in flight (handles the race
+  // condition where auto-save fires with stale data while the user is editing).
   const doSave = useCallback(async () => {
-    if (!state?.id) return;
+    const currentState = stateRef.current;
+    if (!currentState?.id) return;
     if (inflight.current) return;
     setSaveStatus('saving');
     setLastError(null);
-    inflight.current = saveOfferRpc(state)
+    let hadError = false;
+    inflight.current = saveOfferRpc(currentState)
       .then(() => {
         dirtyRef.current = false;
         setSaveStatus('saved');
@@ -165,14 +174,19 @@ export function useOfferEditor(initial: OfferEditorState | null) {
         qc.invalidateQueries({ queryKey: ['client_list'] });
       })
       .catch((err) => {
+        hadError = true;
         setSaveStatus('error');
         setLastError(err.message ?? String(err));
       })
       .finally(() => {
         inflight.current = null;
+        // If new changes arrived while this save was in flight, persist them now.
+        // This also fires when the component is already unmounted — that is fine
+        // because doSave only touches refs and the global QueryClient.
+        if (!hadError && dirtyRef.current) doSave();
       });
     await inflight.current;
-  }, [state, qc]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [qc]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save 2 seconds after the last change.
   useEffect(() => {
@@ -181,7 +195,7 @@ export function useOfferEditor(initial: OfferEditorState | null) {
       doSave();
     }, 2000);
     return () => clearTimeout(timer);
-  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state, doSave]);
 
   // Wrap dispatch: mark dirty + reset save indicator so user sees "Nesalvat".
   const dispatchAndSave = useCallback(
