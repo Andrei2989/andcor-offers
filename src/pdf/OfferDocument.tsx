@@ -53,7 +53,6 @@ const s = StyleSheet.create({
 });
 
 function PdfGrandTotal({ offer }: { offer: PdfOffer }) {
-  if (offer.groups.length <= 1) return null;
   const total = offer.groups.reduce(
     (sum, g) => sum + g.items.reduce((s, i) => s + i.quantity * i.unit_price, 0),
     0,
