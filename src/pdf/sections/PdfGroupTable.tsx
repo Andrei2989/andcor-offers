@@ -100,6 +100,7 @@ const s = StyleSheet.create({
     backgroundColor: C.g100,
   },
   grandTotalRow: {
+    flexDirection: 'row',
     borderTopWidth: 0.5,
     borderTopColor: C.navy,
     backgroundColor: C.navy,
