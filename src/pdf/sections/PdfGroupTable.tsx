@@ -183,26 +183,26 @@ function TotalRows({ total, showPurchasePrice, showPartCode }: { total: number; 
   const vat = total * VAT_RATE;
   const totalWithVat = total * (1 + VAT_RATE);
   return (
-    <>
-      <View style={s.totalRow} wrap={false}>
+    <View wrap={false}>
+      <View style={s.totalRow}>
         <Text style={[s.totalLabel, { flex: labelFlex }]}>TOTAL (fără TVA)</Text>
         <Text style={[s.totalValue, { flex: valCol.flex }]}>
           {formatNumberRO(total)}{' '}RON
         </Text>
       </View>
-      <View style={s.vatRow} wrap={false}>
+      <View style={s.vatRow}>
         <Text style={[s.totalLabel, { flex: labelFlex }]}>TVA (21%)</Text>
         <Text style={[s.totalValue, { flex: valCol.flex }]}>
           {formatNumberRO(vat)}{' '}RON
         </Text>
       </View>
-      <View style={[s.grandTotalRow]} wrap={false}>
+      <View style={s.grandTotalRow}>
         <Text style={[s.grandTotalLabel, { flex: labelFlex }]}>TOTAL (cu TVA)</Text>
         <Text style={[s.grandTotalValue, { flex: valCol.flex }]}>
           {formatNumberRO(totalWithVat)}{' '}RON
         </Text>
       </View>
-    </>
+    </View>
   );
 }
 
