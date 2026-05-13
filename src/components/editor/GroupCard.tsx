@@ -106,9 +106,19 @@ export function GroupCard({
         <button onClick={onAddItem} className="btn-secondary !py-1 !px-3 !text-xs">
           + Articol
         </button>
-        <div className="text-sm">
-          <span className="text-ink-500 mr-2">TOTAL grupa (fără TVA)</span>
-          <span className="font-bold text-navy">{formatRON(groupTotal(group))}</span>
+        <div className="text-sm text-right space-y-0.5">
+          <div>
+            <span className="text-ink-500 mr-2">TOTAL grupă (fără TVA)</span>
+            <span className="font-bold text-navy">{formatRON(groupTotal(group))}</span>
+          </div>
+          <div>
+            <span className="text-ink-500 mr-2">TVA (21%)</span>
+            <span className="font-semibold text-ink-600">{formatRON(groupTotal(group) * 0.21)}</span>
+          </div>
+          <div>
+            <span className="text-ink-500 mr-2">TOTAL grupă (cu TVA)</span>
+            <span className="font-bold text-amber-700">{formatRON(groupTotal(group) * 1.21)}</span>
+          </div>
         </div>
       </div>
     </div>
