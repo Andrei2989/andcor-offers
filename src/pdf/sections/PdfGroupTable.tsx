@@ -54,6 +54,8 @@ function buildCells(item: PdfOfferItem, idx: number, showPurchasePrice: boolean,
   return buildCols(showPurchasePrice, showPartCode).map((c) => all[c.key]);
 }
 
+const VAT_RATE = 0.21;
+
 const s = StyleSheet.create({
   title: {
     fontSize: 10,
@@ -93,6 +95,15 @@ const s = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: C.navy,
   },
+  vatRow: {
+    flexDirection: 'row',
+    backgroundColor: C.g100,
+  },
+  grandTotalRow: {
+    borderTopWidth: 0.5,
+    borderTopColor: C.navy,
+    backgroundColor: C.navy,
+  },
   totalLabel: {
     fontSize: 9,
     color: C.navy,
@@ -104,6 +115,22 @@ const s = StyleSheet.create({
   totalValue: {
     fontSize: 10,
     color: C.navy,
+    fontWeight: 700,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    textAlign: 'right',
+  },
+  grandTotalLabel: {
+    fontSize: 9,
+    color: C.white,
+    fontWeight: 700,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    textAlign: 'right',
+  },
+  grandTotalValue: {
+    fontSize: 10,
+    color: C.white,
     fontWeight: 700,
     paddingVertical: 6,
     paddingHorizontal: 4,
@@ -149,17 +176,33 @@ function ItemRow({ item, idx, alt, showPurchasePrice, showPartCode }: {
   );
 }
 
-function TotalRow({ total, showPurchasePrice, showPartCode }: { total: number; showPurchasePrice: boolean; showPartCode: boolean }) {
+function TotalRows({ total, showPurchasePrice, showPartCode }: { total: number; showPurchasePrice: boolean; showPartCode: boolean }) {
   const cols = buildCols(showPurchasePrice, showPartCode);
   const valCol = cols[cols.length - 1];
   const labelFlex = cols.slice(0, cols.length - 1).reduce((acc, c) => acc + c.flex, 0);
+  const vat = total * VAT_RATE;
+  const totalWithVat = total * (1 + VAT_RATE);
   return (
-    <View style={s.totalRow} wrap={false}>
-      <Text style={[s.totalLabel, { flex: labelFlex }]}>TOTAL (fără TVA)</Text>
-      <Text style={[s.totalValue, { flex: valCol.flex }]}>
-        {formatNumberRO(total)}{' '}RON
-      </Text>
-    </View>
+    <>
+      <View style={s.totalRow} wrap={false}>
+        <Text style={[s.totalLabel, { flex: labelFlex }]}>TOTAL (fără TVA)</Text>
+        <Text style={[s.totalValue, { flex: valCol.flex }]}>
+          {formatNumberRO(total)}{' '}RON
+        </Text>
+      </View>
+      <View style={s.vatRow} wrap={false}>
+        <Text style={[s.totalLabel, { flex: labelFlex }]}>TVA (21%)</Text>
+        <Text style={[s.totalValue, { flex: valCol.flex }]}>
+          {formatNumberRO(vat)}{' '}RON
+        </Text>
+      </View>
+      <View style={[s.grandTotalRow]} wrap={false}>
+        <Text style={[s.grandTotalLabel, { flex: labelFlex }]}>TOTAL (cu TVA)</Text>
+        <Text style={[s.grandTotalValue, { flex: valCol.flex }]}>
+          {formatNumberRO(totalWithVat)}{' '}RON
+        </Text>
+      </View>
+    </>
   );
 }
 
@@ -177,7 +220,7 @@ export function PdfGroupTable({ group, showPurchasePrice = false, showPartCode =
         {group.items.map((item, idx) => (
           <ItemRow key={idx} item={item} idx={idx} alt={idx % 2 === 1} showPurchasePrice={showPurchasePrice} showPartCode={showPartCode} />
         ))}
-        <TotalRow total={total} showPurchasePrice={showPurchasePrice} showPartCode={showPartCode} />
+        <TotalRows total={total} showPurchasePrice={showPurchasePrice} showPartCode={showPartCode} />
       </View>
     </View>
   );

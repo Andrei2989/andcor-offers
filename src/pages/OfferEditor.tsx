@@ -118,9 +118,19 @@ export default function OfferEditor() {
           <GroupList state={state} dispatch={dispatch} />
           <TermsCard state={state} dispatch={dispatch} />
           <div className="card p-4 mt-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs uppercase text-ink-500 tracking-wide">Total ofertă (fără TVA)</div>
-              <div className="text-2xl font-bold text-navy">{formatRON(offerTotal(state))}</div>
+            <div className="space-y-0.5">
+              <div>
+                <div className="text-xs uppercase text-ink-500 tracking-wide">Total ofertă (fără TVA)</div>
+                <div className="text-2xl font-bold text-navy">{formatRON(offerTotal(state))}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-ink-500 tracking-wide">TVA (21%)</div>
+                <div className="text-lg font-semibold text-ink-600">{formatRON(offerTotal(state) * 0.21)}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-ink-500 tracking-wide">Total ofertă (cu TVA)</div>
+                <div className="text-2xl font-bold text-amber-700">{formatRON(offerTotal(state) * 1.21)}</div>
+              </div>
             </div>
             <StatusSelect state={state} dispatch={dispatch} />
           </div>
