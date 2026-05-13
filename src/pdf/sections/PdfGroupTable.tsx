@@ -7,51 +7,52 @@ import { formatNumberRO } from '@/lib/format';
 import { groupTotal } from '@/lib/totals';
 import type { PdfOfferGroup, PdfOfferItem } from '../types';
 
-const COLS_BASE = [
-  { key: 'nr',   flex: 5,  align: 'center' as const },
-  { key: 'name', flex: 24, align: 'left'   as const },
-  { key: 'ref',  flex: 15, align: 'center' as const },
-  { key: 'code', flex: 14, align: 'center' as const },
-  { key: 'um',   flex: 6,  align: 'center' as const },
-  { key: 'qty',  flex: 7,  align: 'center' as const },
-  { key: 'unit', flex: 14, align: 'right'  as const },
-  { key: 'val',  flex: 15, align: 'right'  as const },
-];
+const HEADER_LABELS: Record<string, string> = {
+  nr:       'Nr.',
+  name:     'Denumire produs / serviciu',
+  ref:      'Reper fabricaţie /\nSerie şasiu',
+  code:     'Cod reper',
+  um:       'U/M',
+  qty:      'Cant.',
+  purchase: 'Preţ achiziţie\n(RON, fără TVA)',
+  unit:     'Preţ unitar\n(RON, fără TVA)',
+  val:      'Valoare\n(RON, fără TVA)',
+};
 
-const COLS_WITH_PURCHASE = [
+const ALL_COLS = [
   { key: 'nr',       flex: 5,  align: 'center' as const },
-  { key: 'name',     flex: 21, align: 'left'   as const },
-  { key: 'ref',      flex: 13, align: 'center' as const },
-  { key: 'code',     flex: 12, align: 'center' as const },
-  { key: 'um',       flex: 5,  align: 'center' as const },
-  { key: 'qty',      flex: 6,  align: 'center' as const },
+  { key: 'name',     flex: 24, align: 'left'   as const },
+  { key: 'ref',      flex: 15, align: 'center' as const },
+  { key: 'code',     flex: 14, align: 'center' as const },
+  { key: 'um',       flex: 6,  align: 'center' as const },
+  { key: 'qty',      flex: 7,  align: 'center' as const },
   { key: 'purchase', flex: 13, align: 'right'  as const },
-  { key: 'unit',     flex: 12, align: 'right'  as const },
-  { key: 'val',      flex: 13, align: 'right'  as const },
+  { key: 'unit',     flex: 14, align: 'right'  as const },
+  { key: 'val',      flex: 15, align: 'right'  as const },
 ];
 
-const HEADERS_BASE = [
-  'Nr.',
-  'Denumire produs / serviciu',
-  'Reper fabricaţie /\nSerie şasiu',
-  'Cod reper',
-  'U/M',
-  'Cant.',
-  'Preţ unitar\n(RON, fără TVA)',
-  'Valoare\n(RON, fără TVA)',
-];
+function buildCols(showPurchasePrice: boolean, showPartCode: boolean) {
+  return ALL_COLS.filter((c) => {
+    if (c.key === 'code' && !showPartCode) return false;
+    if (c.key === 'purchase' && !showPurchasePrice) return false;
+    return true;
+  });
+}
 
-const HEADERS_WITH_PURCHASE = [
-  'Nr.',
-  'Denumire produs / serviciu',
-  'Reper fabricaţie /\nSerie şasiu',
-  'Cod reper',
-  'U/M',
-  'Cant.',
-  'Preţ achiziţie\n(RON, fără TVA)',
-  'Preţ unitar\n(RON, fără TVA)',
-  'Valoare\n(RON, fără TVA)',
-];
+function buildCells(item: PdfOfferItem, idx: number, showPurchasePrice: boolean, showPartCode: boolean): string[] {
+  const all: Record<string, string> = {
+    nr:       String(idx + 1),
+    name:     item.name,
+    ref:      item.manufacturer_ref,
+    code:     item.part_code,
+    um:       item.unit,
+    qty:      formatNumberRO(item.quantity),
+    purchase: formatNumberRO(item.purchase_price),
+    unit:     formatNumberRO(item.unit_price),
+    val:      formatNumberRO(item.quantity * item.unit_price),
+  };
+  return buildCols(showPurchasePrice, showPartCode).map((c) => all[c.key]);
+}
 
 const s = StyleSheet.create({
   title: {
@@ -110,58 +111,36 @@ const s = StyleSheet.create({
   },
 });
 
-function HeaderRow({ showPurchasePrice }: { showPurchasePrice: boolean }) {
-  const COLS = showPurchasePrice ? COLS_WITH_PURCHASE : COLS_BASE;
-  const HEADERS = showPurchasePrice ? HEADERS_WITH_PURCHASE : HEADERS_BASE;
+function HeaderRow({ showPurchasePrice, showPartCode }: { showPurchasePrice: boolean; showPartCode: boolean }) {
+  const cols = buildCols(showPurchasePrice, showPartCode);
   return (
     <View style={s.headerRow} fixed>
-      {HEADERS.map((h, i) => (
+      {cols.map((col) => (
         <Text
-          key={i}
-          style={[
-            s.headerCell,
-            { flex: COLS[i].flex, textAlign: COLS[i].align },
-          ]}
+          key={col.key}
+          style={[s.headerCell, { flex: col.flex, textAlign: col.align }]}
         >
-          {h}
+          {HEADER_LABELS[col.key]}
         </Text>
       ))}
     </View>
   );
 }
 
-function ItemRow({ item, idx, alt, showPurchasePrice }: { item: PdfOfferItem; idx: number; alt: boolean; showPurchasePrice: boolean }) {
-  const COLS = showPurchasePrice ? COLS_WITH_PURCHASE : COLS_BASE;
-  const cells = showPurchasePrice
-    ? [
-        String(idx + 1),
-        item.name,
-        item.manufacturer_ref,
-        item.part_code,
-        item.unit,
-        formatNumberRO(item.quantity),
-        formatNumberRO(item.purchase_price),
-        formatNumberRO(item.unit_price),
-        formatNumberRO(item.quantity * item.unit_price),
-      ]
-    : [
-        String(idx + 1),
-        item.name,
-        item.manufacturer_ref,
-        item.part_code,
-        item.unit,
-        formatNumberRO(item.quantity),
-        formatNumberRO(item.unit_price),
-        formatNumberRO(item.quantity * item.unit_price),
-      ];
+function ItemRow({ item, idx, alt, showPurchasePrice, showPartCode }: {
+  item: PdfOfferItem;
+  idx: number;
+  alt: boolean;
+  showPurchasePrice: boolean;
+  showPartCode: boolean;
+}) {
+  const cols = buildCols(showPurchasePrice, showPartCode);
+  const cells = buildCells(item, idx, showPurchasePrice, showPartCode);
   const valIdx = cells.length - 1;
   return (
     <View style={alt ? [s.row, s.rowAlt] : s.row} wrap={false}>
       {cells.map((c, i) => {
-        const styles: Style[] = [
-          s.cell,
-          { flex: COLS[i].flex, textAlign: COLS[i].align },
-        ];
+        const styles: Style[] = [s.cell, { flex: cols[i].flex, textAlign: cols[i].align }];
         if (i === valIdx) styles.push(s.valueCell);
         if (i === cells.length - 1) styles.push(s.cellLast);
         return <Text key={i} style={styles}>{c}</Text>;
@@ -170,31 +149,35 @@ function ItemRow({ item, idx, alt, showPurchasePrice }: { item: PdfOfferItem; id
   );
 }
 
-function TotalRow({ total, showPurchasePrice }: { total: number; showPurchasePrice: boolean }) {
-  const COLS = showPurchasePrice ? COLS_WITH_PURCHASE : COLS_BASE;
-  const valCol = COLS[COLS.length - 1];
-  const labelFlex = COLS.slice(0, COLS.length - 1).reduce((acc, c) => acc + c.flex, 0);
+function TotalRow({ total, showPurchasePrice, showPartCode }: { total: number; showPurchasePrice: boolean; showPartCode: boolean }) {
+  const cols = buildCols(showPurchasePrice, showPartCode);
+  const valCol = cols[cols.length - 1];
+  const labelFlex = cols.slice(0, cols.length - 1).reduce((acc, c) => acc + c.flex, 0);
   return (
     <View style={s.totalRow} wrap={false}>
       <Text style={[s.totalLabel, { flex: labelFlex }]}>TOTAL (fără TVA)</Text>
       <Text style={[s.totalValue, { flex: valCol.flex }]}>
-        {formatNumberRO(total)}{' '}RON
+        {formatNumberRO(total)}{' '}RON
       </Text>
     </View>
   );
 }
 
-export function PdfGroupTable({ group, showPurchasePrice = false }: { group: PdfOfferGroup; showPurchasePrice?: boolean }) {
+export function PdfGroupTable({ group, showPurchasePrice = false, showPartCode = true }: {
+  group: PdfOfferGroup;
+  showPurchasePrice?: boolean;
+  showPartCode?: boolean;
+}) {
   const total = groupTotal({ id: '', title: '', sort_order: 0, items: group.items.map((i, idx) => ({ ...i, id: `${idx}` })) });
   return (
     <View>
       <Text style={s.title}>{group.title}</Text>
       <View style={s.table}>
-        <HeaderRow showPurchasePrice={showPurchasePrice} />
+        <HeaderRow showPurchasePrice={showPurchasePrice} showPartCode={showPartCode} />
         {group.items.map((item, idx) => (
-          <ItemRow key={idx} item={item} idx={idx} alt={idx % 2 === 1} showPurchasePrice={showPurchasePrice} />
+          <ItemRow key={idx} item={item} idx={idx} alt={idx % 2 === 1} showPurchasePrice={showPurchasePrice} showPartCode={showPartCode} />
         ))}
-        <TotalRow total={total} showPurchasePrice={showPurchasePrice} />
+        <TotalRow total={total} showPurchasePrice={showPurchasePrice} showPartCode={showPartCode} />
       </View>
     </View>
   );

@@ -34,6 +34,7 @@ export interface PdfCompany {
 export interface PdfOffer {
   offer_number: string;
   showPurchasePrice?: boolean;
+  showPartCode?: boolean;
   issue_date: string;        // YYYY-MM-DD
   valid_until: string;       // YYYY-MM-DD
   validity_days: number;

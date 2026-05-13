@@ -5,10 +5,11 @@ import type { PdfOffer } from '@/pdf/types';
 
 export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
   const [showPurchasePrice, setShowPurchasePrice] = useState(false);
+  const [showPartCode, setShowPartCode] = useState(true);
 
   const offerWithFlag = useMemo(
-    () => ({ ...offer, showPurchasePrice }),
-    [offer, showPurchasePrice]
+    () => ({ ...offer, showPurchasePrice, showPartCode }),
+    [offer, showPurchasePrice, showPartCode]
   );
 
   const doc = useMemo(() => <OfferDocument offer={offerWithFlag} />, [offerWithFlag]);
@@ -35,6 +36,15 @@ export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
               className="rounded border-ink-300"
             />
             Preț achiziție în PDF
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer select-none text-ink-600">
+            <input
+              type="checkbox"
+              checked={showPartCode}
+              onChange={(e) => setShowPartCode(e.target.checked)}
+              className="rounded border-ink-300"
+            />
+            Cod reper în PDF
           </label>
           {instance.url ? (
             <a
