@@ -11,7 +11,7 @@ const HEADER_LABELS: Record<string, string> = {
   nr:       'Nr.',
   name:     'Denumire produs / serviciu',
   ref:      'Reper fabricaţie /\nSerie şasiu',
-  code:     'Cod reper',
+  code:     'Cod Reper\nOfertat',
   um:       'U/M',
   qty:      'Cant.',
   purchase: 'Preţ achiziţie\n(RON, fără TVA)',
