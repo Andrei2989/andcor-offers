@@ -39,12 +39,19 @@ function buildCols(showPurchasePrice: boolean, showPartCode: boolean) {
   });
 }
 
+function breakLong(s: string, every = 14): string {
+  if (!s || s.length <= every) return s;
+  const chunks: string[] = [];
+  for (let i = 0; i < s.length; i += every) chunks.push(s.slice(i, i + every));
+  return chunks.join('\n');
+}
+
 function buildCells(item: PdfOfferItem, idx: number, showPurchasePrice: boolean, showPartCode: boolean): string[] {
   const all: Record<string, string> = {
     nr:       String(idx + 1),
     name:     item.name,
-    ref:      item.manufacturer_ref,
-    code:     item.part_code,
+    ref:      breakLong(item.manufacturer_ref),
+    code:     breakLong(item.part_code),
     um:       item.unit,
     qty:      formatNumberRO(item.quantity),
     purchase: formatNumberRO(item.purchase_price),
