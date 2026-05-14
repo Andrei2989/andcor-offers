@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCompany, fetchOffers, fetchOfferEditor, keys } from '@/lib/queries';
+import { PdfPreviewModal } from '@/components/PdfPreviewModal';
 import { formatDateRO, formatRON } from '@/lib/format';
 import { StatusBadge } from '@/components/StatusBadge';
 import { pdf } from '@react-pdf/renderer';
@@ -11,6 +13,7 @@ export default function CustomerPage() {
   const { clientName } = useParams<{ clientName: string }>();
   const navigate = useNavigate();
   const decoded = decodeURIComponent(clientName ?? '');
+  const [previewOffer, setPreviewOffer] = useState<{ id: string; number: string } | null>(null);
 
   const filters = { clientExact: decoded };
   const { data: offers, isLoading, error } = useQuery({
@@ -38,6 +41,14 @@ export default function CustomerPage() {
   }
 
   return (
+    <>
+    {previewOffer && (
+      <PdfPreviewModal
+        offerId={previewOffer.id}
+        offerNumber={previewOffer.number}
+        onClose={() => setPreviewOffer(null)}
+      />
+    )}
     <div>
       <button className="btn-ghost !px-0 mb-4 text-sm" onClick={() => navigate('/')}>
         ← Înapoi la oferte
@@ -103,6 +114,7 @@ export default function CustomerPage() {
                 <td className="px-4 py-2"><StatusBadge status={o.status} /></td>
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => navigate(`/offers/${o.id}/edit`)}>Editează</button>
+                  <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => setPreviewOffer({ id: o.id, number: o.offer_number })}>Previzualizare</button>
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => downloadPdf(o.id, o.offer_number)}>PDF</button>
                 </td>
               </tr>
@@ -111,5 +123,6 @@ export default function CustomerPage() {
         </table>
       </div>
     </div>
+    </>
   );
 }
