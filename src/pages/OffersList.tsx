@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { PdfPreviewModal } from '@/components/PdfPreviewModal';
 import {
   createDraftOffer,
   deleteOffer,
@@ -58,6 +59,7 @@ export default function OffersList() {
   const [clientSearch, setClientSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [previewOffer, setPreviewOffer] = useState<{ id: string; number: string } | null>(null);
   const debouncedSearch = useDebouncedValue(clientSearch, 300);
 
   const filters: OfferListFilters = {
@@ -122,6 +124,14 @@ export default function OffersList() {
   }
 
   return (
+    <>
+    {previewOffer && (
+      <PdfPreviewModal
+        offerId={previewOffer.id}
+        offerNumber={previewOffer.number}
+        onClose={() => setPreviewOffer(null)}
+      />
+    )}
     <div>
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-2xl font-bold text-navy">Oferte</h1>
@@ -222,6 +232,7 @@ export default function OffersList() {
                 <td className="px-4 py-2 text-right whitespace-nowrap">
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => navigate(`/offers/${o.id}/edit`)}>Editează</button>
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => dup.mutate(o.id)}>Duplică</button>
+                  <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => setPreviewOffer({ id: o.id, number: o.offer_number })}>Previzualizare</button>
                   <button className="btn-ghost !py-1 !px-2 !text-xs" onClick={() => downloadPdf(o.id, o.offer_number)}>PDF</button>
                   <button
                     className="btn-ghost !py-1 !px-2 !text-xs text-red-700"
@@ -238,5 +249,6 @@ export default function OffersList() {
         </table>
       </div>
     </div>
+    </>
   );
 }
