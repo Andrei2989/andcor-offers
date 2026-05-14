@@ -1,7 +1,4 @@
 import { View, Text, StyleSheet } from '@react-pdf/renderer';
-import type { Styles } from '@react-pdf/renderer';
-
-type Style = Styles[string];
 import { C } from '../theme';
 import { formatNumberRO } from '@/lib/format';
 import { groupTotal } from '@/lib/totals';
@@ -19,13 +16,15 @@ const HEADER_LABELS: Record<string, string> = {
   val:      'Valoare\n(RON, fără TVA)',
 };
 
+// nr(4) + name(20) + ref(18) + code(15) + um(5) + qty(6) + unit(14) + val(15) = 97
+// purchase(13) este opțional; când e activ: nr(4)+name(18)+ref(16)+code(13)+um(5)+qty(6)+purchase(13)+unit(12)+val(13) = 100
 const ALL_COLS = [
-  { key: 'nr',       flex: 5,  align: 'center' as const },
-  { key: 'name',     flex: 24, align: 'left'   as const },
-  { key: 'ref',      flex: 15, align: 'center' as const },
-  { key: 'code',     flex: 14, align: 'center' as const },
-  { key: 'um',       flex: 6,  align: 'center' as const },
-  { key: 'qty',      flex: 7,  align: 'center' as const },
+  { key: 'nr',       flex: 4,  align: 'center' as const },
+  { key: 'name',     flex: 20, align: 'left'   as const },
+  { key: 'ref',      flex: 18, align: 'center' as const },
+  { key: 'code',     flex: 15, align: 'center' as const },
+  { key: 'um',       flex: 5,  align: 'center' as const },
+  { key: 'qty',      flex: 6,  align: 'center' as const },
   { key: 'purchase', flex: 13, align: 'right'  as const },
   { key: 'unit',     flex: 14, align: 'right'  as const },
   { key: 'val',      flex: 15, align: 'right'  as const },
@@ -39,7 +38,8 @@ function buildCols(showPurchasePrice: boolean, showPartCode: boolean) {
   });
 }
 
-function breakLong(s: string, every = 14): string {
+// Inserează un break după fiecare `every` caractere pentru șiruri fără spații
+function breakLong(s: string, every = 11): string {
   if (!s || s.length <= every) return s;
   const chunks: string[] = [];
   for (let i = 0; i < s.length; i += every) chunks.push(s.slice(i, i + every));
@@ -81,20 +81,28 @@ const s = StyleSheet.create({
     fontSize: 7.5,
     fontWeight: 700,
     paddingVertical: 6,
-    paddingHorizontal: 4,
-    lineHeight: 1.25,
+    paddingHorizontal: 3,
+    lineHeight: 1.3,
   },
   row: { flexDirection: 'row' },
   rowAlt: { backgroundColor: C.g100 },
-  cell: {
-    fontSize: 8.5,
-    color: C.g900,
-    paddingVertical: 4,
-    paddingHorizontal: 4,
+  // View wrapper — impune limita strictă a coloanei
+  cellView: {
     borderRightWidth: 0.3,
     borderRightColor: C.g200,
+    overflow: 'hidden',
   },
-  cellLast: { borderRightWidth: 0 },
+  cellViewLast: {
+    borderRightWidth: 0,
+    overflow: 'hidden',
+  },
+  cell: {
+    fontSize: 8,
+    color: C.g900,
+    paddingVertical: 4,
+    paddingHorizontal: 3,
+    lineHeight: 1.3,
+  },
   valueCell: { color: C.navy, fontWeight: 700 },
   totalRow: {
     flexDirection: 'row',
@@ -150,10 +158,10 @@ function HeaderRow({ showPurchasePrice, showPartCode }: { showPurchasePrice: boo
   const cols = buildCols(showPurchasePrice, showPartCode);
   return (
     <View style={s.headerRow} fixed>
-      {cols.map((col) => (
+      {cols.map((col, i) => (
         <Text
           key={col.key}
-          style={[s.headerCell, { flex: col.flex, textAlign: col.align }]}
+          style={[s.headerCell, { flex: col.flex, textAlign: col.align, borderRightWidth: i < cols.length - 1 ? 0.3 : 0, borderRightColor: '#ffffff40' }]}
         >
           {HEADER_LABELS[col.key]}
         </Text>
@@ -175,10 +183,15 @@ function ItemRow({ item, idx, alt, showPurchasePrice, showPartCode }: {
   return (
     <View style={alt ? [s.row, s.rowAlt] : s.row} wrap={false}>
       {cells.map((c, i) => {
-        const styles: Style[] = [s.cell, { flex: cols[i].flex, textAlign: cols[i].align }];
-        if (i === valIdx) styles.push(s.valueCell);
-        if (i === cells.length - 1) styles.push(s.cellLast);
-        return <Text key={i} style={styles}>{c}</Text>;
+        const isLast = i === cells.length - 1;
+        const isVal = i === valIdx;
+        return (
+          <View key={i} style={[isLast ? s.cellViewLast : s.cellView, { flex: cols[i].flex }]}>
+            <Text style={[s.cell, { textAlign: cols[i].align }, isVal ? s.valueCell : {}]}>
+              {c}
+            </Text>
+          </View>
+        );
       })}
     </View>
   );
