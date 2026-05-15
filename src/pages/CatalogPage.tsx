@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteCatalogItem, fetchCatalog, updateCatalogItemCategory } from '@/lib/queries';
 import { formatNumberRO } from '@/lib/format';
@@ -22,14 +22,44 @@ function categoryColor(cat: string) {
   return CATEGORY_COLORS[cat] ?? 'bg-ink-100 text-ink-700';
 }
 
-function CategoryEditor({ item, onSave }: { item: CatalogItem; onSave: (id: string, cat: string) => void }) {
+function CategoryEditor({ item, allCategories, onSave }: {
+  item: CatalogItem;
+  allCategories: string[];
+  onSave: (id: string, cat: string) => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(item.category);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = allCategories.filter(
+    (c) => c.toLowerCase().includes(value.toLowerCase()) && c !== value
+  );
+
+  useEffect(() => {
+    if (!editing) return;
+    function handler(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        onSave(item.id, value);
+        setEditing(false);
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [editing, value, item.id, onSave]);
+
+  function commit(cat: string) {
+    onSave(item.id, cat);
+    setEditing(false);
+    setOpen(false);
+    setValue(cat);
+  }
 
   if (!editing) {
     return (
       <button
-        onClick={() => setEditing(true)}
+        onClick={() => { setEditing(true); setOpen(true); setValue(item.category); }}
         className={`text-xs font-medium px-2 py-0.5 rounded-full ${item.category ? categoryColor(item.category) : 'bg-ink-100 text-ink-400 border border-dashed border-ink-300'}`}
         title="Click pentru a edita categoria"
       >
@@ -39,17 +69,43 @@ function CategoryEditor({ item, onSave }: { item: CatalogItem; onSave: (id: stri
   }
 
   return (
-    <input
-      autoFocus
-      className="text-xs border border-navy rounded px-2 py-0.5 w-28 focus:outline-none"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => { onSave(item.id, value); setEditing(false); }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') { onSave(item.id, value); setEditing(false); }
-        if (e.key === 'Escape') { setValue(item.category); setEditing(false); }
-      }}
-    />
+    <div ref={containerRef} className="relative inline-block">
+      <input
+        autoFocus
+        className="text-xs border border-navy rounded px-2 py-0.5 w-32 focus:outline-none"
+        value={value}
+        onChange={(e) => { setValue(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit(value);
+          if (e.key === 'Escape') { setValue(item.category); setEditing(false); setOpen(false); }
+        }}
+        placeholder="Categorie…"
+      />
+      {open && (filtered.length > 0 || (value && !allCategories.includes(value))) && (
+        <div className="absolute z-50 top-full left-0 mt-0.5 w-40 bg-white border border-ink-200 rounded shadow-lg overflow-hidden">
+          {filtered.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className="w-full text-left px-3 py-1.5 text-xs hover:bg-navy hover:text-white flex items-center gap-2"
+              onMouseDown={(e) => { e.preventDefault(); commit(cat); }}
+            >
+              <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${categoryColor(cat)}`}>{cat}</span>
+            </button>
+          ))}
+          {value && !allCategories.includes(value) && (
+            <button
+              type="button"
+              className="w-full text-left px-3 py-1.5 text-xs hover:bg-navy hover:text-white text-ink-500 border-t border-ink-100"
+              onMouseDown={(e) => { e.preventDefault(); commit(value); }}
+            >
+              + Creează „{value}"
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -199,6 +255,7 @@ export default function CatalogPage() {
                       <td className="px-4 py-2 text-center">
                         <CategoryEditor
                           item={item}
+                          allCategories={categories}
                           onSave={(id, cat) => updateCat.mutate({ id, category: cat })}
                         />
                       </td>
