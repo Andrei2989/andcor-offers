@@ -91,6 +91,7 @@ export interface CatalogItem {
   part_code: string;
   unit: string;
   purchase_price: number;
+  category: string;
   use_count: number;
   last_used_at: string;
   created_at: string;

@@ -193,6 +193,7 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
       part_code: it.part_code,
       unit: it.unit,
       purchase_price: it.purchase_price,
+      category: detectCategory(g.title),
     }))
   );
   upsertCatalogItems(catalogItems).catch(() => {});
@@ -270,6 +271,33 @@ export async function fetchDeletedOffers(): Promise<OfferWithTotal[]> {
 
 // ---------- Catalog ----------
 
+const BRAND_KEYWORDS: [RegExp, string][] = [
+  [/dacia/i, 'Dacia'],
+  [/iveco/i, 'Iveco'],
+  [/\btab\b/i, 'TAB'],
+  [/renault/i, 'Renault'],
+  [/ford/i, 'Ford'],
+  [/volkswagen|vw\b/i, 'Volkswagen'],
+  [/bmw/i, 'BMW'],
+  [/mercedes/i, 'Mercedes'],
+  [/opel/i, 'Opel'],
+  [/toyota/i, 'Toyota'],
+  [/hyundai/i, 'Hyundai'],
+  [/kia/i, 'Kia'],
+  [/peugeot/i, 'Peugeot'],
+  [/citroen|citroën/i, 'Citroën'],
+  [/fiat/i, 'Fiat'],
+  [/skoda|škoda/i, 'Škoda'],
+  [/audi/i, 'Audi'],
+];
+
+export function detectCategory(groupTitle: string): string {
+  for (const [re, brand] of BRAND_KEYWORDS) {
+    if (re.test(groupTitle)) return brand;
+  }
+  return '';
+}
+
 export async function searchCatalog(query: string): Promise<CatalogItem[]> {
   if (!query.trim() || query.trim().length < 2) return [];
   const q = query.trim();
@@ -300,6 +328,11 @@ export async function fetchCatalog(search?: string): Promise<CatalogItem[]> {
 
 export async function deleteCatalogItem(id: string): Promise<void> {
   const { error } = await supabase.from('catalog_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function updateCatalogItemCategory(id: string, category: string): Promise<void> {
+  const { error } = await supabase.from('catalog_items').update({ category }).eq('id', id);
   if (error) throw error;
 }
 
