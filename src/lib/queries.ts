@@ -193,7 +193,7 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
       part_code: it.part_code,
       unit: it.unit,
       purchase_price: it.purchase_price,
-      category: detectCategory(g.title),
+      category: detectCategory(g.title, it.name, it.manufacturer_ref),
     }))
   );
   upsertCatalogItems(catalogItems).catch(() => {});
@@ -276,24 +276,75 @@ const BRAND_KEYWORDS: [RegExp, string][] = [
   [/iveco/i, 'Iveco'],
   [/\btab\b/i, 'TAB'],
   [/renault/i, 'Renault'],
-  [/ford/i, 'Ford'],
-  [/volkswagen|vw\b/i, 'Volkswagen'],
-  [/bmw/i, 'BMW'],
+  [/\bford\b/i, 'Ford'],
+  [/volkswagen|\bvw\b/i, 'Volkswagen'],
+  [/\bbmw\b/i, 'BMW'],
   [/mercedes/i, 'Mercedes'],
-  [/opel/i, 'Opel'],
+  [/\bopel\b/i, 'Opel'],
   [/toyota/i, 'Toyota'],
   [/hyundai/i, 'Hyundai'],
-  [/kia/i, 'Kia'],
+  [/\bkia\b/i, 'Kia'],
   [/peugeot/i, 'Peugeot'],
   [/citroen|citroën/i, 'Citroën'],
-  [/fiat/i, 'Fiat'],
+  [/\bfiat\b/i, 'Fiat'],
   [/skoda|škoda/i, 'Škoda'],
-  [/audi/i, 'Audi'],
+  [/\baudi\b/i, 'Audi'],
+  [/volvo/i, 'Volvo'],
+  [/\blada\b/i, 'Lada'],
 ];
 
-export function detectCategory(groupTitle: string): string {
-  for (const [re, brand] of BRAND_KEYWORDS) {
-    if (re.test(groupTitle)) return brand;
+// Prefixe VIN (WMI — primele 3 caractere) → marcă
+const VIN_WMI: [RegExp, string][] = [
+  [/^UU1/i, 'Dacia'],         // Dacia Romania
+  [/^WJM/i, 'Iveco'],         // Iveco Italia
+  [/^WVW|^WV1|^WV2/i, 'Volkswagen'],
+  [/^W0L/i, 'Opel'],
+  [/^WBA|^WBS|^WBY/i, 'BMW'],
+  [/^WDB|^WDC|^WDD|^W1K/i, 'Mercedes'],
+  [/^WAU|^WA1/i, 'Audi'],
+  [/^WP0/i, 'Porsche'],
+  [/^WF0/i, 'Ford'],
+  [/^VF1|^VF2/i, 'Renault'],
+  [/^VF3/i, 'Peugeot'],
+  [/^VF7|^VF8|^VF9/i, 'Citroën'],
+  [/^ZFA|^ZFF/i, 'Fiat'],
+  [/^YV1/i, 'Volvo'],
+  [/^VNK/i, 'Toyota'],
+  [/^TMA/i, 'Hyundai'],
+  [/^XTA/i, 'Lada'],
+];
+
+function detectFromVin(text: string): string {
+  // Cauta un sir de 17 caractere alfanumerice (format VIN standard)
+  const vinMatch = text.match(/\b([A-HJ-NPR-Z0-9]{17})\b/i);
+  if (vinMatch) {
+    const vin = vinMatch[1].toUpperCase();
+    for (const [re, brand] of VIN_WMI) {
+      if (re.test(vin)) return brand;
+    }
+  }
+  // Incearca si primele 3 caractere din text daca par WMI
+  const wmiMatch = text.match(/\b([A-HJ-NPR-Z0-9]{3})[A-HJ-NPR-Z0-9]{5,}/i);
+  if (wmiMatch) {
+    const wmi = wmiMatch[1].toUpperCase();
+    for (const [re, brand] of VIN_WMI) {
+      if (re.test(wmi)) return brand;
+    }
+  }
+  return '';
+}
+
+export function detectCategory(groupTitle: string, name = '', manufacturerRef = ''): string {
+  // Prioritate: titlu grupă → denumire produs → serie șasiu
+  for (const text of [groupTitle, name, manufacturerRef]) {
+    for (const [re, brand] of BRAND_KEYWORDS) {
+      if (re.test(text)) return brand;
+    }
+  }
+  // Detectie VIN din reper fabricatie si denumire
+  for (const text of [manufacturerRef, name]) {
+    const brand = detectFromVin(text);
+    if (brand) return brand;
   }
   return '';
 }
