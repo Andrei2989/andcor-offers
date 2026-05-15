@@ -1,8 +1,9 @@
 import { NumberInput } from '@/components/NumberInput';
 import { formatNumberRO } from '@/lib/format';
-import type { OfferItem } from '@/types/db';
+import type { CatalogItem, OfferItem } from '@/types/db';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { CatalogSearch } from './CatalogSearch';
 
 interface Props {
   item: OfferItem;
@@ -10,11 +11,6 @@ interface Props {
   onPatch: (patch: Partial<OfferItem>) => void;
   onDelete: () => void;
   onEnter: () => void;
-}
-
-function autoResize(el: HTMLTextAreaElement) {
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
 }
 
 export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
@@ -38,20 +34,28 @@ export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
     }
   };
 
+  function handleCatalogSelect(cat: CatalogItem) {
+    onPatch({
+      name: cat.name,
+      manufacturer_ref: cat.manufacturer_ref,
+      part_code: cat.part_code,
+      unit: cat.unit,
+      purchase_price: cat.purchase_price,
+    });
+  }
+
   return (
     <tr ref={setNodeRef} style={style} className="group">
       <td className={`${baseCell} w-8 text-center text-ink-500 text-xs cursor-grab`} {...attributes} {...listeners}>
         {index + 1}
       </td>
       <td className={baseCell}>
-        <textarea
-          className={`${inputCls} resize-none leading-snug`}
-          style={{ overflow: 'hidden', fieldSizing: 'content', minHeight: '1.75rem' } as React.CSSProperties}
+        <CatalogSearch
           value={item.name}
+          onChange={(v) => onPatch({ name: v })}
+          onSelect={handleCatalogSelect}
           placeholder="Denumire produs"
-          rows={1}
-          ref={(el) => { if (el) autoResize(el); }}
-          onChange={(e) => { autoResize(e.target); onPatch({ name: e.target.value }); }}
+          className={`${inputCls} resize-none leading-snug`}
         />
       </td>
       <td className={baseCell}>
@@ -61,8 +65,11 @@ export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
           value={item.manufacturer_ref}
           placeholder="Reper fabricație"
           rows={1}
-          ref={(el) => { if (el) autoResize(el); }}
-          onChange={(e) => { autoResize(e.target); onPatch({ manufacturer_ref: e.target.value }); }}
+          ref={(el) => { if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; } }}
+          onChange={(e) => {
+            const el = e.target; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px';
+            onPatch({ manufacturer_ref: e.target.value });
+          }}
         />
       </td>
       <td className={baseCell}>

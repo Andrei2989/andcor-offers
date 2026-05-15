@@ -8,6 +8,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const tabs = [
     { to: '/', label: 'Oferte' },
+    { to: '/catalog', label: 'Catalog' },
     { to: '/trash', label: 'Coș' },
     { to: '/settings', label: 'Setări' },
   ];
@@ -26,7 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 to={t.to}
                 className={clsx(
                   'px-3 py-1.5 rounded-md text-sm',
-                  loc.pathname === t.to || (t.to === '/' && loc.pathname.startsWith('/offers')) || (t.to === '/trash' && loc.pathname === '/trash')
+                  loc.pathname === t.to || (t.to === '/' && loc.pathname.startsWith('/offers')) || (t.to === '/trash' && loc.pathname === '/trash') || (t.to === '/catalog' && loc.pathname === '/catalog')
                     ? 'bg-white/10'
                     : 'hover:bg-white/5'
                 )}

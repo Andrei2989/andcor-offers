@@ -84,6 +84,18 @@ export interface OfferGroup {
   items: OfferItem[];
 }
 
+export interface CatalogItem {
+  id: string;
+  name: string;
+  manufacturer_ref: string;
+  part_code: string;
+  unit: string;
+  purchase_price: number;
+  use_count: number;
+  last_used_at: string;
+  created_at: string;
+}
+
 export interface OfferEditorState {
   id: string;
   offer_number: string;

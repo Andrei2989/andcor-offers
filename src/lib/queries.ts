@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type {
+  CatalogItem,
   CompanySettings,
   OfferEditorState,
   OfferGroup,
@@ -183,6 +184,18 @@ export async function saveOfferRpc(state: OfferEditorState): Promise<void> {
     p_payload: payload,
   });
   if (error) throw error;
+
+  // Upsert catalog — fire and forget, nu blocheaza salvarea
+  const catalogItems = state.groups.flatMap((g) =>
+    g.items.map((it) => ({
+      name: it.name,
+      manufacturer_ref: it.manufacturer_ref,
+      part_code: it.part_code,
+      unit: it.unit,
+      purchase_price: it.purchase_price,
+    }))
+  );
+  upsertCatalogItems(catalogItems).catch(() => {});
 }
 
 export interface ClientEntry {
@@ -253,6 +266,49 @@ export async function fetchDeletedOffers(): Promise<OfferWithTotal[]> {
     .select('*');
   if (error) throw error;
   return data as OfferWithTotal[];
+}
+
+// ---------- Catalog ----------
+
+export async function searchCatalog(query: string): Promise<CatalogItem[]> {
+  if (!query.trim() || query.trim().length < 2) return [];
+  const q = query.trim();
+  const { data, error } = await supabase
+    .from('catalog_items')
+    .select('*')
+    .or(`name.ilike.%${q}%,manufacturer_ref.ilike.%${q}%,part_code.ilike.%${q}%`)
+    .order('use_count', { ascending: false })
+    .limit(8);
+  if (error) throw error;
+  return data as CatalogItem[];
+}
+
+export async function fetchCatalog(search?: string): Promise<CatalogItem[]> {
+  let q = supabase
+    .from('catalog_items')
+    .select('*')
+    .order('use_count', { ascending: false })
+    .order('last_used_at', { ascending: false });
+  if (search?.trim()) {
+    const s = search.trim();
+    q = q.or(`name.ilike.%${s}%,manufacturer_ref.ilike.%${s}%,part_code.ilike.%${s}%`);
+  }
+  const { data, error } = await q;
+  if (error) throw error;
+  return data as CatalogItem[];
+}
+
+export async function deleteCatalogItem(id: string): Promise<void> {
+  const { error } = await supabase.from('catalog_items').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function upsertCatalogItems(
+  items: Array<{ name: string; manufacturer_ref: string; part_code: string; unit: string; purchase_price: number }>
+): Promise<void> {
+  if (!items.length) return;
+  const { error } = await supabase.rpc('upsert_catalog_items', { p_items: items });
+  if (error) throw error;
 }
 
 export async function uploadLogo(
