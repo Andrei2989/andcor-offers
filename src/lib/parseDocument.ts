@@ -73,6 +73,55 @@ async function callClaude(
     }));
 }
 
+/** Extract text from legacy .doc binary (Word 97-2003 Compound Document)
+ *  Scans for UTF-16LE and Windows-1252 text sequences — rough but enough for Claude. */
+async function extractDocText(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  const chunks: string[] = [];
+
+  function isPrintable(b: number) {
+    return (b >= 32 && b < 127) || b === 9 || b === 10 || b === 13;
+  }
+
+  // Pass 1 — UTF-16LE sequences (consecutive pairs: readable byte + 0x00)
+  let i = 0;
+  while (i < bytes.length - 3) {
+    if (bytes[i + 1] === 0 && isPrintable(bytes[i])) {
+      const start = i;
+      let nChars = 0;
+      while (i + 1 < bytes.length && bytes[i + 1] === 0 && isPrintable(bytes[i])) {
+        nChars++;
+        i += 2;
+      }
+      if (nChars >= 4) {
+        const s = new TextDecoder('utf-16le').decode(bytes.slice(start, start + nChars * 2)).trim();
+        if (s) chunks.push(s);
+      }
+    } else {
+      i++;
+    }
+  }
+
+  // Pass 2 — raw ASCII / Windows-1252 runs (min 8 chars to reduce noise)
+  i = 0;
+  while (i < bytes.length) {
+    if (bytes[i] >= 32 && bytes[i] < 127) {
+      const start = i;
+      while (i < bytes.length && isPrintable(bytes[i])) i++;
+      if (i - start >= 8) {
+        const s = new TextDecoder('windows-1252').decode(bytes.slice(start, i)).trim();
+        if (s) chunks.push(s);
+      }
+    } else {
+      i++;
+    }
+  }
+
+  if (!chunks.length) throw new Error('Nu am putut extrage text din fișierul .doc');
+  return chunks.join('\n');
+}
+
 /** Extract DOCX text preserving table structure as tab-separated rows */
 async function extractDocxText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
@@ -171,6 +220,11 @@ export async function parseDocument(file: File, apiKey: string): Promise<ParsedI
     return callClaude([{ type: 'text', text }], apiKey);
   }
 
+  if (ext === 'doc') {
+    const text = await extractDocText(file);
+    return callClaude([{ type: 'text', text }], apiKey);
+  }
+
   if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
     const text = await extractXlsxText(file);
     return callClaude([{ type: 'text', text }], apiKey);
@@ -193,5 +247,5 @@ export async function parseDocument(file: File, apiKey: string): Promise<ParsedI
     );
   }
 
-  throw new Error(`Format nesuportat: .${ext}. Acceptat: .docx, .xlsx, .xls, .csv, .pdf, .jpg, .png, .webp`);
+  throw new Error(`Format nesuportat: .${ext}. Acceptat: .doc, .docx, .xlsx, .xls, .csv, .pdf, .jpg, .png, .webp`);
 }

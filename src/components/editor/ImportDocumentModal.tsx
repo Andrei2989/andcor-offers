@@ -10,7 +10,7 @@ interface Props {
 
 type Step = 'upload' | 'loading' | 'preview' | 'error';
 
-const ACCEPTED = '.docx,.xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp';
+const ACCEPTED = '.doc,.docx,.xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp';
 const NEW_GROUP_SENTINEL = '__new__';
 
 function tmpId() {
@@ -126,7 +126,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
             >
               <div className="text-4xl mb-3">📄</div>
               <p className="font-medium text-ink-700">Trage documentul aici sau click pentru a selecta</p>
-              <p className="text-sm text-ink-400 mt-1">Acceptat: .docx, .xlsx, .xls, .csv, .pdf, .jpg, .png, .webp</p>
+              <p className="text-sm text-ink-400 mt-1">Acceptat: .doc, .docx, .xlsx, .xls, .csv, .pdf, .jpg, .png, .webp</p>
               <input ref={fileRef} type="file" accept={ACCEPTED} className="hidden" onChange={onFileChange} />
             </div>
           )}
