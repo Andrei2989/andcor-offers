@@ -67,7 +67,7 @@ export default function OfferEditor() {
   // Build PDF viewmodel from current form state, debounced for performance.
   // 1500ms + startTransition: PDF regeneration starts only after user stops typing,
   // and React can interrupt it if input arrives mid-render.
-  const debouncedState = useDebouncedValue(state, 1500, true);
+  const debouncedState = useDebouncedValue(state, 500, true);
   const pdfOffer = useMemo(
     () => (debouncedState?.id ? toPdfOffer(debouncedState, company ?? null) : null),
     [debouncedState, company]
