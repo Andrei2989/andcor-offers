@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { searchCatalog } from '@/lib/queries';
 import type { CatalogItem } from '@/types/db';
 import { formatNumberRO } from '@/lib/format';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 interface Props {
   value: string;
@@ -22,11 +23,13 @@ export function CatalogSearch({ value, onChange, onSelect, placeholder, classNam
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const debouncedValue = useDebouncedValue(value, 350);
+
   const { data: results = [] } = useQuery({
-    queryKey: ['catalog-search', value],
-    queryFn: () => searchCatalog(value),
-    enabled: value.trim().length >= 2,
-    staleTime: 10_000,
+    queryKey: ['catalog-search', debouncedValue],
+    queryFn: () => searchCatalog(debouncedValue),
+    enabled: debouncedValue.trim().length >= 2,
+    staleTime: 30_000,
   });
 
   useEffect(() => {

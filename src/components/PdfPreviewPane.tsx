@@ -15,11 +15,9 @@ export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
 
   const doc = useMemo(() => <OfferDocument offer={offerWithFlag} />, [offerWithFlag]);
   const [instance, updateInstance] = usePDF({ document: doc });
-  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
 
   useEffect(() => {
     updateInstance(doc);
-    setLastUpdated(Date.now());
   }, [doc, updateInstance]);
 
   useEffect(() => {
@@ -87,7 +85,7 @@ export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
           </div>
           {instance.url ? (
             <iframe
-              key={lastUpdated}
+              key={instance.url}
               src={instance.url}
               title="Previzualizare ofertă"
               className="flex-1 w-full border-0"
@@ -121,7 +119,7 @@ export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
       </div>
       {instance.url ? (
         <iframe
-          key={lastUpdated}
+          key={instance.url}
           src={instance.url}
           title="Previzualizare ofertă"
           className="flex-1 w-full border-0"
