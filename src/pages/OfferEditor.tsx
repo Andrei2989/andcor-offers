@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { ImportDocumentModal } from '@/components/editor/ImportDocumentModal';
 import type { ParsedItem } from '@/lib/parseDocument';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -63,10 +63,11 @@ export default function OfferEditor() {
     });
   }
 
-  const pdfOffer = useMemo(
+  const rawPdfOffer = useMemo(
     () => (state?.id ? toPdfOffer(state, company ?? null) : null),
     [state, company]
   );
+  const pdfOffer = useDeferredValue(rawPdfOffer);
 
   if (isLoading || !state?.id) return <div className="text-ink-500">Se încarcă…</div>;
   if (error) return <div className="text-red-700">Eroare: {(error as Error).message}</div>;

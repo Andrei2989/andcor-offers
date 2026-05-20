@@ -23,12 +23,14 @@ export function CatalogSearch({ value, onChange, onSelect, placeholder, classNam
   const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const debouncedValue = useDebouncedValue(value, 350);
+  // searchTerm starts empty — queries fire only when user actively types, not on mount.
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm, 350);
 
   const { data: results = [] } = useQuery({
-    queryKey: ['catalog-search', debouncedValue],
-    queryFn: () => searchCatalog(debouncedValue),
-    enabled: debouncedValue.trim().length >= 2,
+    queryKey: ['catalog-search', debouncedSearch],
+    queryFn: () => searchCatalog(debouncedSearch),
+    enabled: debouncedSearch.trim().length >= 2,
     staleTime: 30_000,
   });
 
@@ -57,9 +59,10 @@ export function CatalogSearch({ value, onChange, onSelect, placeholder, classNam
         onChange={(e) => {
           autoResize(e.target);
           onChange(e.target.value);
+          setSearchTerm(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => { if (value.trim().length >= 2) setOpen(true); }}
+        onFocus={() => { if (searchTerm.trim().length >= 2) setOpen(true); }}
         onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
       />
       {showDropdown && (
