@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ImportDocumentModal } from '@/components/editor/ImportDocumentModal';
 import type { ParsedItem } from '@/lib/parseDocument';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -20,6 +20,7 @@ import { ClientPickerModal } from '@/components/editor/ClientPickerModal';
 import { GroupCard } from '@/components/editor/GroupCard';
 import { PdfPreviewPane } from '@/components/PdfPreviewPane';
 import { toPdfOffer } from '@/lib/viewmodel';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatRON, addDays } from '@/lib/format';
 import { offerTotal } from '@/lib/totals';
 
@@ -63,11 +64,11 @@ export default function OfferEditor() {
     });
   }
 
-  const rawPdfOffer = useMemo(
-    () => (state?.id ? toPdfOffer(state, company ?? null) : null),
-    [state, company]
+  const debouncedState = useDebouncedValue(state, 600);
+  const pdfOffer = useMemo(
+    () => (debouncedState?.id ? toPdfOffer(debouncedState, company ?? null) : null),
+    [debouncedState, company]
   );
-  const pdfOffer = useDeferredValue(rawPdfOffer);
 
   if (isLoading || !state?.id) return <div className="text-ink-500">Se încarcă…</div>;
   if (error) return <div className="text-red-700">Eroare: {(error as Error).message}</div>;
