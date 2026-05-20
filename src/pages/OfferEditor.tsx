@@ -20,7 +20,6 @@ import { ClientPickerModal } from '@/components/editor/ClientPickerModal';
 import { GroupCard } from '@/components/editor/GroupCard';
 import { PdfPreviewPane } from '@/components/PdfPreviewPane';
 import { toPdfOffer } from '@/lib/viewmodel';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatRON, addDays } from '@/lib/format';
 import { offerTotal } from '@/lib/totals';
 
@@ -64,13 +63,9 @@ export default function OfferEditor() {
     });
   }
 
-  // Build PDF viewmodel from current form state, debounced for performance.
-  // 1500ms + startTransition: PDF regeneration starts only after user stops typing,
-  // and React can interrupt it if input arrives mid-render.
-  const debouncedState = useDebouncedValue(state, 500, true);
   const pdfOffer = useMemo(
-    () => (debouncedState?.id ? toPdfOffer(debouncedState, company ?? null) : null),
-    [debouncedState, company]
+    () => (state?.id ? toPdfOffer(state, company ?? null) : null),
+    [state, company]
   );
 
   if (isLoading || !state?.id) return <div className="text-ink-500">Se încarcă…</div>;
