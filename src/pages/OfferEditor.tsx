@@ -64,7 +64,7 @@ export default function OfferEditor() {
     });
   }
 
-  const debouncedState = useDebouncedValue(state, 600);
+  const debouncedState = useDebouncedValue(state, 300);
   const pdfOffer = useMemo(
     () => (debouncedState?.id ? toPdfOffer(debouncedState, company ?? null) : null),
     [debouncedState, company]
