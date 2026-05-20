@@ -17,7 +17,9 @@ export function PdfPreviewPane({ offer }: { offer: PdfOffer }) {
   const [instance, updateInstance] = usePDF({ document: doc });
 
   useEffect(() => {
+    const prev = instance.url;
     updateInstance(doc);
+    return () => { if (prev) URL.revokeObjectURL(prev); };
   }, [doc, updateInstance]);
 
   useEffect(() => {
