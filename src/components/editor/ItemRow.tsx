@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { NumberInput } from '@/components/NumberInput';
 import { formatNumberRO } from '@/lib/format';
 import type { CatalogItem, OfferItem } from '@/types/db';
@@ -13,7 +14,7 @@ interface Props {
   onEnter: () => void;
 }
 
-export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
+export const ItemRow = memo(function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -126,4 +127,4 @@ export function ItemRow({ item, index, onPatch, onDelete, onEnter }: Props) {
       </td>
     </tr>
   );
-}
+}, (prev, next) => prev.item === next.item && prev.index === next.index);

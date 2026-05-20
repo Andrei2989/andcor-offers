@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import type { OfferGroup, OfferItem } from '@/types/db';
 import { ItemRow } from './ItemRow';
 import { formatRON } from '@/lib/format';
@@ -22,7 +23,7 @@ interface Props {
   onReorderItems: (ids: string[]) => void;
 }
 
-export function GroupCard({
+export const GroupCard = memo(function GroupCard({
   group,
   onRename,
   onDelete,
@@ -32,6 +33,7 @@ export function GroupCard({
   onReorderItems,
 }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const total = useMemo(() => groupTotal(group), [group]);
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
@@ -109,18 +111,18 @@ export function GroupCard({
         <div className="text-sm text-right space-y-0.5">
           <div>
             <span className="text-ink-500 mr-2">TOTAL grupă (fără TVA)</span>
-            <span className="font-bold text-navy">{formatRON(groupTotal(group))}</span>
+            <span className="font-bold text-navy">{formatRON(total)}</span>
           </div>
           <div>
             <span className="text-ink-500 mr-2">TVA (21%)</span>
-            <span className="font-semibold text-ink-600">{formatRON(groupTotal(group) * 0.21)}</span>
+            <span className="font-semibold text-ink-600">{formatRON(total * 0.21)}</span>
           </div>
           <div>
             <span className="text-ink-500 mr-2">TOTAL grupă (cu TVA)</span>
-            <span className="font-bold text-amber-700">{formatRON(groupTotal(group) * 1.21)}</span>
+            <span className="font-bold text-amber-700">{formatRON(total * 1.21)}</span>
           </div>
         </div>
       </div>
     </div>
   );
-}
+}, (prev, next) => prev.group === next.group);
