@@ -1,5 +1,6 @@
 # ANDCOR AUTO — Offer Generator
 
+
 Web app for ANDCOR AUTO SRL to create, save, edit, and export price offers (Oferte de Preț) as PDFs. Replaces the Excel-based workflow with a fast form UI, live PDF preview, and Supabase-backed storage.
 
 ## Tech
