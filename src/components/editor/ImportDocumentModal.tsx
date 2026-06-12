@@ -1,3 +1,8 @@
+Mergi la:
+https://github.com/Andrei2989/andcor-offers/edit/main/src/components/editor/ImportDocumentModal.tsx
+
+Șterge tot și înlocuiește cu asta:
+
 import { useRef, useState } from 'react';
 import type { OfferGroup } from '@/types/db';
 import { parseDocument, type ParsedItem } from '@/lib/parseDocument';
@@ -34,18 +39,11 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined;
-
   async function process(file: File) {
-    if (!apiKey) {
-      setError('VITE_ANTHROPIC_API_KEY nu este configurat în .env.local');
-      setStep('error');
-      return;
-    }
     setStep('loading');
     setError('');
     try {
-      const result = await parseDocument(file, apiKey);
+      const result = await parseDocument(file);
       if (!result.length) throw new Error('Nu au fost găsite articole în document.');
       setItems(result);
       setItemGroups(result.map(() => localGroups[0]?.id ?? ''));
@@ -155,7 +153,6 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                 {items.length} articole găsite. Alege grupa pentru fiecare articol sau creează una nouă.
               </p>
 
-              {/* Renamed new groups */}
               {localGroups.filter((g) => g.isNew).length > 0 && (
                 <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-xs font-medium text-blue-700 mb-2">Grupe noi — poți redenumi:</p>
