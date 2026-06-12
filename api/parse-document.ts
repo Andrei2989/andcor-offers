@@ -1,4 +1,6 @@
-export const config = { runtime: 'edge' };
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export const config = { maxDuration: 60 };
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 
@@ -16,81 +18,69 @@ Rules:
 - Do not wrap output in markdown code blocks
 - Output ONLY the JSON array, nothing else`;
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured on server' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server' });
   }
 
-  const body = await req.json() as { content?: Array<{ type: string; [k: string]: unknown }> };
-  const content = body.content;
+  const { content } = req.body as { content: Array<{ type: string; [k: string]: unknown }> };
   if (!content) {
-    return new Response(JSON.stringify({ error: 'Missing content' }), {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-    });
+    return res.status(400).json({ error: 'Missing content' });
   }
 
-  const response = await fetch(ANTHROPIC_API, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-opus-4-5-20251101',
-      max_tokens: 8192,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            ...content,
-            { type: 'text', text: 'Extract all product line items as a JSON array [{name, manufacturer_ref, unit, quantity}]. Include every row.' },
-          ],
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errBody = await response.text();
-    return new Response(JSON.stringify({ error: `Claude API error: ${errBody}` }), {
-      status: response.status,
-      headers: { 'content-type': 'application/json' },
+  try {
+    const response = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5-20251101',
+        max_tokens: 8192,
+        system: SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              ...content,
+              { type: 'text', text: 'Extract all product line items as a JSON array [{name, manufacturer_ref, unit, quantity}]. Include every row.' },
+            ],
+          },
+        ],
+      }),
     });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      return res.status(response.status).json({ error: `Claude API error: ${errBody}` });
+    }
+
+    const data = await response.json() as { content?: Array<{ text?: string }> };
+    const text = data.content?.[0]?.text ?? '';
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) {
+      return res.status(500).json({ error: 'Claude returned no JSON array' });
+    }
+
+    const items = JSON.parse(match[0]) as Array<{ name?: unknown; manufacturer_ref?: unknown; unit?: unknown; quantity?: unknown }>;
+    const parsed = items
+      .filter((i) => i.name && String(i.name).trim())
+      .map((i) => ({
+        name: String(i.name ?? '').trim(),
+        manufacturer_ref: String(i.manufacturer_ref ?? '').trim(),
+        unit: String(i.unit ?? 'buc').trim() || 'buc',
+        quantity: Number(i.quantity) || 1,
+      }));
+
+    return res.status(200).json(parsed);
+  } catch (e) {
+    return res.status(500).json({ error: (e as Error).message });
   }
-
-  const data = await response.json() as { content?: Array<{ text?: string }> };
-  const text = data.content?.[0]?.text ?? '';
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) {
-    return new Response(JSON.stringify({ error: 'Claude returned no JSON array' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
-  }
-
-  const items = JSON.parse(match[0]) as Array<{ name?: unknown; manufacturer_ref?: unknown; unit?: unknown; quantity?: unknown }>;
-  const parsed = items
-    .filter((i) => i.name && String(i.name).trim())
-    .map((i) => ({
-      name: String(i.name ?? '').trim(),
-      manufacturer_ref: String(i.manufacturer_ref ?? '').trim(),
-      unit: String(i.unit ?? 'buc').trim() || 'buc',
-      quantity: Number(i.quantity) || 1,
-    }));
-
-  return new Response(JSON.stringify(parsed), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
 }
