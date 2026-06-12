@@ -8,73 +8,23 @@ export interface ParsedItem {
   quantity: number;
 }
 
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
-
-const SYSTEM_PROMPT = `You are a procurement document parser. Extract all line items and return ONLY a valid JSON array.
-Each element must have:
-- "name": the FULL original product description, unchanged, including all details (do NOT truncate or summarize)
-- "manufacturer_ref": part code, OEM code, or chassis/VIN number found in the row (e.g. "253206170R", "VF1HJD40166029576"); empty string if none
-- "unit": unit of measure from the document (BUC, SET, KIT, L, KG, litri, etc.); use "buc" if missing
-- "quantity": numeric quantity from the document
-
-Rules:
-- Extract EVERY product row, do not skip any
-- Preserve the exact original text for "name", do not translate or shorten
-- Ignore header rows, total rows, and footnotes
-- Do not wrap output in markdown code blocks
-- Output ONLY the JSON array, nothing else`;
-
 async function callClaude(
-  content: Array<{ type: string; [k: string]: unknown }>,
-  apiKey: string
+  content: Array<{ type: string; [k: string]: unknown }>
 ): Promise<ParsedItem[]> {
-  const res = await fetch(ANTHROPIC_API, {
+  const res = await fetch('/api/parse-document', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-opus-4-5-20251101',
-      max_tokens: 8192,
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            ...content,
-            { type: 'text', text: 'Extract all product line items as a JSON array [{name, manufacturer_ref, unit, quantity}]. Include every row.' },
-          ],
-        },
-      ],
-    }),
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ content }),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Claude API error ${res.status}: ${body}`);
+    throw new Error(`Eroare server ${res.status}: ${body}`);
   }
 
-  const data = await res.json();
-  const text: string = data.content?.[0]?.text ?? '';
-  const match = text.match(/\[[\s\S]*\]/);
-  if (!match) throw new Error('Claude returned no JSON array');
-
-  const items = JSON.parse(match[0]) as Array<{ name?: unknown; manufacturer_ref?: unknown; unit?: unknown; quantity?: unknown }>;
-  return items
-    .filter((i) => i.name && String(i.name).trim())
-    .map((i) => ({
-      name: String(i.name ?? '').trim(),
-      manufacturer_ref: String(i.manufacturer_ref ?? '').trim(),
-      unit: String(i.unit ?? 'buc').trim() || 'buc',
-      quantity: Number(i.quantity) || 1,
-    }));
+  return res.json() as Promise<ParsedItem[]>;
 }
 
-/** Extract text from legacy .doc binary (Word 97-2003 Compound Document)
- *  Scans for UTF-16LE and Windows-1252 text sequences — rough but enough for Claude. */
 async function extractDocText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const bytes = new Uint8Array(buf);
@@ -84,7 +34,6 @@ async function extractDocText(file: File): Promise<string> {
     return (b >= 32 && b < 127) || b === 9 || b === 10 || b === 13;
   }
 
-  // Pass 1 — UTF-16LE sequences (consecutive pairs: readable byte + 0x00)
   let i = 0;
   while (i < bytes.length - 3) {
     if (bytes[i + 1] === 0 && isPrintable(bytes[i])) {
@@ -103,7 +52,6 @@ async function extractDocText(file: File): Promise<string> {
     }
   }
 
-  // Pass 2 — raw ASCII / Windows-1252 runs (min 8 chars to reduce noise)
   i = 0;
   while (i < bytes.length) {
     if (bytes[i] >= 32 && bytes[i] < 127) {
@@ -122,7 +70,6 @@ async function extractDocText(file: File): Promise<string> {
   return chunks.join('\n');
 }
 
-/** Extract DOCX text preserving table structure as tab-separated rows */
 async function extractDocxText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const zip = await JSZip.loadAsync(buf);
@@ -130,14 +77,11 @@ async function extractDocxText(file: File): Promise<string> {
   if (!xml) throw new Error('word/document.xml not found in docx');
 
   const lines: string[] = [];
-
-  // Extract table rows preserving cell boundaries
   const tableRowRegex = /<w:tr[ >][\s\S]*?<\/w:tr>/g;
   const cellRegex = /<w:tc[ >][\s\S]*?<\/w:tc>/g;
   const textRegex = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g;
 
   let tableMatch;
-  const tableRows = new Set<string>();
 
   while ((tableMatch = tableRowRegex.exec(xml)) !== null) {
     const row = tableMatch[0];
@@ -154,17 +98,12 @@ async function extractDocxText(file: File): Promise<string> {
     }
     cellRegex.lastIndex = 0;
     const line = cells.join('\t');
-    if (line.trim()) {
-      tableRows.add(tableMatch.index.toString());
-      lines.push(line);
-    }
+    if (line.trim()) lines.push(line);
   }
 
-  // Extract non-table paragraphs
   const paraRegex = /<w:p[ >][\s\S]*?<\/w:p>/g;
   let paraMatch;
   while ((paraMatch = paraRegex.exec(xml)) !== null) {
-    // Skip if this paragraph is inside a table row we already captured
     const paraText: string[] = [];
     let tMatch;
     while ((tMatch = textRegex.exec(paraMatch[0])) !== null) {
@@ -212,29 +151,28 @@ function readFileAsBase64(file: File): Promise<string> {
   });
 }
 
-export async function parseDocument(file: File, apiKey: string): Promise<ParsedItem[]> {
+export async function parseDocument(file: File): Promise<ParsedItem[]> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
 
   if (ext === 'docx') {
     const text = await extractDocxText(file);
-    return callClaude([{ type: 'text', text }], apiKey);
+    return callClaude([{ type: 'text', text }]);
   }
 
   if (ext === 'doc') {
     const text = await extractDocText(file);
-    return callClaude([{ type: 'text', text }], apiKey);
+    return callClaude([{ type: 'text', text }]);
   }
 
   if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
     const text = await extractXlsxText(file);
-    return callClaude([{ type: 'text', text }], apiKey);
+    return callClaude([{ type: 'text', text }]);
   }
 
   if (ext === 'pdf') {
     const base64 = await readFileAsBase64(file);
     return callClaude(
-      [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }],
-      apiKey
+      [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }]
     );
   }
 
@@ -242,8 +180,7 @@ export async function parseDocument(file: File, apiKey: string): Promise<ParsedI
     const base64 = await readFileAsBase64(file);
     const mediaType = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
     return callClaude(
-      [{ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } }],
-      apiKey
+      [{ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } }]
     );
   }
 
