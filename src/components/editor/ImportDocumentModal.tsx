@@ -1,22 +1,28 @@
 import { useRef, useState } from 'react';
 import type { OfferGroup } from '@/types/db';
 import { parseDocument, type ParsedItem } from '@/lib/parseDocument';
+
 interface Props {
   groups: OfferGroup[];
   onImport: (assignments: { gid: string; groupTitle?: string; items: ParsedItem[] }[]) => void;
   onClose: () => void;
 }
+
 type Step = 'upload' | 'loading' | 'preview' | 'error';
+
 const ACCEPTED = '.doc,.docx,.xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp';
 const NEW_GROUP_SENTINEL = '__new__';
+
 function tmpId() {
   return `tmp-${Math.random().toString(36).slice(2, 10)}`;
 }
+
 interface LocalGroup {
   id: string;
   title: string;
   isNew: boolean;
 }
+
 export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
   const [step, setStep] = useState<Step>('upload');
   const [items, setItems] = useState<ParsedItem[]>([]);
@@ -27,6 +33,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
   async function process(file: File) {
     setStep('loading');
     setError('');
@@ -41,20 +48,24 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
       setStep('error');
     }
   }
+
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) process(file);
   }
+
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) process(file);
   }
+
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
     setItemGroups((prev) => prev.filter((_, i) => i !== idx));
   }
+
   function handleGroupSelect(idx: number, value: string) {
     if (value === NEW_GROUP_SENTINEL) {
       const title = `Grupa ${localGroups.length + 1}`;
@@ -66,9 +77,11 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
       setItemGroups((prev) => prev.map((g, i) => (i === idx ? value : g)));
     }
   }
+
   function renameGroup(id: string, title: string) {
     setLocalGroups((prev) => prev.map((g) => (g.id === id ? { ...g, title } : g)));
   }
+
   function confirm() {
     if (!items.length) return;
     const map = new Map<string, ParsedItem[]>();
@@ -84,6 +97,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
     onImport(assignments);
     onClose();
   }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
@@ -91,6 +105,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
           <h2 className="font-semibold text-navy text-lg">Import din document</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-700 text-xl leading-none">&times;</button>
         </div>
+
         <div className="flex-1 overflow-y-auto p-6">
           {step === 'upload' && (
             <div
@@ -108,12 +123,14 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
               <input ref={fileRef} type="file" accept={ACCEPTED} className="hidden" onChange={onFileChange} />
             </div>
           )}
+
           {step === 'loading' && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <div className="w-10 h-10 border-4 border-navy border-t-transparent rounded-full animate-spin" />
               <p className="text-ink-600">Se proceseaza documentul cu AI...</p>
             </div>
           )}
+
           {step === 'error' && (
             <div className="flex flex-col items-center gap-4 py-8">
               <div className="text-red-600 text-center">
@@ -124,11 +141,13 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
               <button className="btn-secondary" onClick={() => setStep('upload')}>Incearca din nou</button>
             </div>
           )}
+
           {step === 'preview' && (
             <div>
               <p className="text-sm text-ink-500 mb-3">
                 {items.length} articole gasite. Alege grupa pentru fiecare articol sau creeaza una noua.
               </p>
+
               {localGroups.filter((g) => g.isNew).length > 0 && (
                 <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-xs font-medium text-blue-700 mb-2">Grupe noi - poti redenumi:</p>
@@ -144,6 +163,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                   </div>
                 </div>
               )}
+
               <div className="overflow-x-auto rounded border border-ink-200">
                 <table className="w-full text-sm">
                   <thead className="bg-ink-50 text-ink-500 uppercase text-xs tracking-wide">
@@ -182,9 +202,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
                             onClick={() => removeItem(idx)}
                             className="text-ink-300 hover:text-red-500 text-xs leading-none"
                             title="Elimina"
-                          >
-                            x
-                          </button>
+                          >x</button>
                         </td>
                       </tr>
                     ))}
@@ -194,6 +212,7 @@ export function ImportDocumentModal({ groups, onImport, onClose }: Props) {
             </div>
           )}
         </div>
+
         {step === 'preview' && (
           <div className="flex justify-end gap-3 px-6 py-4 border-t border-ink-200">
             <button className="btn-secondary" onClick={onClose}>Anuleaza</button>
